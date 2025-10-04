@@ -11,28 +11,48 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
-import { Form, FormField, FormItem, FormLabel, FormControl, FormDescription, FormMessage } from "@/components/Form"; // Import FormDescription
+import { Form, FormField, FormItem, FormLabel, FormControl, FormDescription, FormMessage } from "@/components/Form";
 import { toast } from "sonner";
 import { User as UserIcon } from "lucide-react";
+import { Modal } from "@/components/Modal";
+import { AvatarUpload } from "@/components/AvatarUpload"; // Import AvatarUpload
 
 const profileSchema = z.object({
   first_name: z.string().min(1, { message: "First name is required." }).optional().or(z.literal("")),
   last_name: z.string().min(1, { message: "Last name is required." }).optional().or(z.literal("")),
-  avatar_url: z.string().url({ message: "Must be a valid URL." }).optional().or(z.literal("")),
+  // avatar_url is now managed by AvatarUpload component, not direct input
 });
 
-type ProfileFormValues = z.infer<typeof profileSchema>;
+const passwordChangeSchema = z.object({
+  password: z.string().min(6, { message: "Password must be at least 6 characters." }),
+  confirmPassword: z.string(),
+}).refine((data) => data.password === data.confirmPassword, {
+  message: "Passwords don't match.",
+  path: ["confirmPassword"],
+});
+
+type ProfileFormValues = z.infer<typeof profileSchema> & { avatar_url?: string | null }; // Add avatar_url back for form state
+type PasswordChangeFormValues = z.infer<typeof passwordChangeSchema>;
 
 const ProfilePage: React.FC = () => {
   const { user, isLoading: isSessionLoading } = useSession();
   const [loadingProfile, setLoadingProfile] = useState(true);
+  const [isPasswordModalOpen, setIsPasswordModalOpen] = useState(false);
 
-  const form = useForm<ProfileFormValues>({
+  const profileForm = useForm<ProfileFormValues>({
     resolver: zodResolver(profileSchema),
     defaultValues: {
       first_name: "",
       last_name: "",
-      avatar_url: "",
+      avatar_url: "", // Keep in defaultValues for initial display
+    },
+  });
+
+  const passwordForm = useForm<PasswordChangeFormValues>({
+    resolver: zodResolver(passwordChangeSchema),
+    defaultValues: {
+      password: "",
+      confirmPassword: "",
     },
   });
 
@@ -57,12 +77,12 @@ const ProfilePage: React.FC = () => {
       console.error("Error fetching profile:", error);
       toast.error("Failed to load profile.");
     } else if (data) {
-      form.reset(data);
+      profileForm.reset(data);
     }
     setLoadingProfile(false);
   };
 
-  const onSubmit = async (values: ProfileFormValues) => {
+  const onProfileSubmit = async (values: ProfileFormValues) => {
     if (!user) {
       toast.error("You must be logged in to update your profile.");
       return;
@@ -73,7 +93,7 @@ const ProfilePage: React.FC = () => {
       .update({
         first_name: values.first_name || null,
         last_name: values.last_name || null,
-        avatar_url: values.avatar_url || null,
+        avatar_url: values.avatar_url || null, // Ensure avatar_url is updated if changed by AvatarUpload
         updated_at: new Date().toISOString(),
       })
       .eq("id", user.id);
@@ -84,6 +104,35 @@ const ProfilePage: React.FC = () => {
     } else {
       toast.success("Profile updated successfully!");
     }
+  };
+
+  const onPasswordChangeSubmit = async (values: PasswordChangeFormValues) => {
+    if (!user) {
+      toast.error("You must be logged in to change your password.");
+      return;
+    }
+
+    const { error } = await supabase.auth.updateUser({
+      password: values.password,
+    });
+
+    if (error) {
+      console.error("Error changing password:", error);
+      toast.error(`Failed to change password: ${error.message}`);
+    } else {
+      toast.success("Password changed successfully!");
+      setIsPasswordModalOpen(false);
+      passwordForm.reset();
+    }
+  };
+
+  const handleAvatarUploadSuccess = (newUrl: string) => {
+    profileForm.setValue("avatar_url", newUrl);
+    // Immediately save the new avatar URL to the database
+    onProfileSubmit({
+      ...profileForm.getValues(),
+      avatar_url: newUrl,
+    });
   };
 
   if (isSessionLoading || loadingProfile) {
@@ -113,56 +162,38 @@ const ProfilePage: React.FC = () => {
           <CardDescription>Manage your personal information and preferences.</CardDescription>
         </CardHeader>
         <CardContent>
-          <div className="flex flex-col items-center mb-6">
-            <Avatar className="h-24 w-24 mb-4">
-              <AvatarImage src={form.watch("avatar_url") || undefined} alt={user.email || "User"} />
-              <AvatarFallback>
-                <UserIcon className="h-12 w-12 text-muted-foreground" />
-              </AvatarFallback>
-            </Avatar>
-            <p className="text-lg font-semibold">{user.email}</p>
-          </div>
+          <AvatarUpload
+            userId={user.id}
+            currentAvatarUrl={profileForm.watch("avatar_url")}
+            onUploadSuccess={handleAvatarUploadSuccess}
+            className="mb-6"
+          />
+          <p className="text-lg font-semibold text-center mb-6">{user.email}</p>
 
-          <Form {...form}>
-            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+          <Form {...profileForm}>
+            <form onSubmit={profileForm.handleSubmit(onProfileSubmit)} className="space-y-6">
               <FormField
-                control={form.control}
+                control={profileForm.control}
                 name="first_name"
                 render={({ field }) => (
                   <FormItem>
                     <FormLabel>First Name</FormLabel>
                     <FormControl>
-                      <Input placeholder="John" {...field} error={!!form.formState.errors.first_name} />
+                      <Input placeholder="John" {...field} error={!!profileForm.formState.errors.first_name} />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
                 )}
               />
               <FormField
-                control={form.control}
+                control={profileForm.control}
                 name="last_name"
                 render={({ field }) => (
                   <FormItem>
                     <FormLabel>Last Name</FormLabel>
                     <FormControl>
-                      <Input placeholder="Doe" {...field} error={!!form.formState.errors.last_name} />
+                      <Input placeholder="Doe" {...field} error={!!profileForm.formState.errors.last_name} />
                     </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-              <FormField
-                control={form.control}
-                name="avatar_url"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Avatar URL</FormLabel>
-                    <FormControl>
-                      <Input placeholder="https://example.com/avatar.jpg" {...field} error={!!form.formState.errors.avatar_url} />
-                    </FormControl>
-                    <FormDescription>
-                      Provide a direct URL to your profile picture.
-                    </FormDescription>
                     <FormMessage />
                   </FormItem>
                 )}
@@ -170,7 +201,7 @@ const ProfilePage: React.FC = () => {
 
               <div>
                 <h4 className="text-md font-semibold mb-2">Password Management</h4>
-                <Button variant="outline" type="button" onClick={() => toast.info("Password change functionality coming soon!")}>
+                <Button variant="outline" type="button" onClick={() => setIsPasswordModalOpen(true)}>
                   Change Password
                 </Button>
               </div>
@@ -182,13 +213,62 @@ const ProfilePage: React.FC = () => {
                 </Button>
               </div>
 
-              <Button type="submit" className="w-full" disabled={form.formState.isSubmitting}>
-                {form.formState.isSubmitting ? "Saving..." : "Save Changes"}
+              <Button type="submit" className="w-full" disabled={profileForm.formState.isSubmitting}>
+                {profileForm.formState.isSubmitting ? "Saving..." : "Save Changes"}
               </Button>
             </form>
           </Form>
         </CardContent>
       </Card>
+
+      {/* Password Change Modal */}
+      <Modal
+        title="Change Password"
+        description="Enter your new password."
+        open={isPasswordModalOpen}
+        onOpenChange={setIsPasswordModalOpen}
+        footer={
+          <div className="flex justify-end gap-2">
+            <Button variant="secondary" onClick={() => setIsPasswordModalOpen(false)}>
+              Cancel
+            </Button>
+            <Button type="submit" form="password-change-form" disabled={passwordForm.formState.isSubmitting}>
+              {passwordForm.formState.isSubmitting ? "Changing..." : "Change Password"}
+            </Button>
+          </div>
+        }
+      >
+        <Form {...passwordForm}>
+          <form id="password-change-form" onSubmit={passwordForm.handleSubmit(onPasswordChangeSubmit)} className="space-y-4">
+            <FormField
+              control={passwordForm.control}
+              name="password"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>New Password</FormLabel>
+                  <FormControl>
+                    <Input type="password" {...field} error={!!passwordForm.formState.errors.password} />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            <FormField
+              control={passwordForm.control}
+              name="confirmPassword"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Confirm New Password</FormLabel>
+                  <FormControl>
+                    <Input type="password" {...field} error={!!passwordForm.formState.errors.confirmPassword} />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+          </form>
+        </Form>
+      </Modal>
     </div>
   );
 };

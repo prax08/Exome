@@ -6,9 +6,13 @@ import { supabase } from "@/integrations/supabase/client";
 import { Loading } from "@/components/Loading";
 import { useNavigate } from "react-router-dom";
 
+interface CustomUser extends User {
+  role?: string; // Add role property
+}
+
 interface SessionContextType {
   session: Session | null;
-  user: User | null;
+  user: CustomUser | null;
   isLoading: boolean;
 }
 
@@ -16,18 +20,33 @@ const SessionContext = createContext<SessionContextType | undefined>(undefined);
 
 export const SessionContextProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [session, setSession] = useState<Session | null>(null);
-  const [user, setUser] = useState<User | null>(null);
+  const [user, setUser] = useState<CustomUser | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const navigate = useNavigate();
+
+  const fetchUserProfile = async (userId: string) => {
+    const { data, error } = await supabase
+      .from('profiles')
+      .select('role')
+      .eq('id', userId)
+      .single();
+
+    if (error) {
+      console.error("Error fetching user profile role:", error);
+      return null;
+    }
+    return data?.role;
+  };
 
   useEffect(() => {
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       async (event, currentSession) => {
         if (currentSession) {
+          const userRole = await fetchUserProfile(currentSession.user.id);
+          const userWithRole: CustomUser = { ...currentSession.user, role: userRole };
           setSession(currentSession);
-          setUser(currentSession.user);
+          setUser(userWithRole);
           if (event === 'SIGNED_IN' || event === 'USER_UPDATED') {
-            // Redirect authenticated users away from login page
             if (window.location.pathname === '/login') {
               navigate('/');
             }
@@ -35,7 +54,6 @@ export const SessionContextProvider: React.FC<{ children: React.ReactNode }> = (
         } else {
           setSession(null);
           setUser(null);
-          // Redirect unauthenticated users to login page if not already there
           if (window.location.pathname !== '/login') {
             navigate('/login');
           }
@@ -45,10 +63,12 @@ export const SessionContextProvider: React.FC<{ children: React.ReactNode }> = (
     );
 
     // Initial session check
-    supabase.auth.getSession().then(({ data: { session: initialSession } }) => {
+    supabase.auth.getSession().then(async ({ data: { session: initialSession } }) => {
       if (initialSession) {
+        const userRole = await fetchUserProfile(initialSession.user.id);
+        const userWithRole: CustomUser = { ...initialSession.user, role: userRole };
         setSession(initialSession);
-        setUser(initialSession.user);
+        setUser(userWithRole);
         if (window.location.pathname === '/login') {
           navigate('/');
         }
