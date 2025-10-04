@@ -16,6 +16,8 @@ import { useSession } from "@/contexts/SessionContext";
 import { format } from "date-fns";
 import { CategorySelect } from "@/components/CategorySelect";
 import { ReceiptUpload } from "@/components/ReceiptUpload";
+import { useOnlineStatus } from "@/hooks/use-online-status"; // Import useOnlineStatus
+import { offlineStore } from "@/integrations/localforage"; // Import offlineStore
 
 // Define transaction type for client-side
 interface Transaction {
@@ -80,6 +82,7 @@ const TransactionFormModal: React.FC<TransactionFormModalProps> = ({
   initialType = 'expense',
 }) => {
   const { user } = useSession();
+  const isOnline = useOnlineStatus(); // Get online status
 
   const form = useForm<z.infer<typeof transactionFormSchema>>({
     resolver: zodResolver(transactionFormSchema),
@@ -130,6 +133,7 @@ const TransactionFormModal: React.FC<TransactionFormModalProps> = ({
     }
 
     const transactionData = {
+      user_id: user.id, // Include user_id for offline storage
       amount: values.amount,
       type: values.type,
       description: values.description,
@@ -142,6 +146,10 @@ const TransactionFormModal: React.FC<TransactionFormModalProps> = ({
 
     if (editingTransaction) {
       // Update existing transaction
+      if (!isOnline) {
+        toast.warning("You are offline. Cannot update existing transactions at this time.");
+        return;
+      }
       const { error } = await supabase
         .from('transactions')
         .update(transactionData)
@@ -158,6 +166,21 @@ const TransactionFormModal: React.FC<TransactionFormModalProps> = ({
       }
     } else {
       // Add new transaction
+      if (!isOnline) {
+        // Save to localforage if offline
+        try {
+          const offlineTransactionKey = `offline-transaction-${Date.now()}`;
+          await offlineStore.setItem(offlineTransactionKey, transactionData);
+          toast.success("Transaction saved offline. It will sync when you are back online!");
+          onOpenChange(false);
+          onSuccess(); // Trigger refetch to potentially show a placeholder or update UI
+        } catch (localforageError) {
+          console.error("Error saving transaction offline:", localforageError);
+          toast.error("Failed to save transaction offline.");
+        }
+        return;
+      }
+
       const { error } = await supabase.from('transactions').insert({
         user_id: user.id,
         ...transactionData,
@@ -193,7 +216,7 @@ const TransactionFormModal: React.FC<TransactionFormModalProps> = ({
           <Button variant="secondary" onClick={() => onOpenChange(false)}>
             Cancel
           </Button>
-          <Button type="submit" form="transaction-form" disabled={form.formState.isSubmitting}>
+          <Button type="submit" form="transaction-form" disabled={form.formState.isSubmitting || (!isOnline && !!editingTransaction)}>
             {form.formState.isSubmitting ? (editingTransaction ? "Saving..." : "Adding...") : (editingTransaction ? "Save Changes" : "Add Transaction")}
           </Button>
         </div>

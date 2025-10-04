@@ -15,11 +15,39 @@ import ProfilePage from "./pages/ProfilePage";
 import DashboardPage from "./pages/DashboardPage";
 import RecurringTransactionsPage from "./pages/RecurringTransactionsPage";
 import CategoriesPage from "./pages/CategoriesPage";
-import BudgetsPage from "./pages/BudgetsPage"; // Import new page
+import BudgetsPage from "./pages/BudgetsPage";
 import { SessionContextProvider } from "@/contexts/SessionContext";
 import { ProtectedRoute } from "@/components/ProtectedRoute";
+import { useOfflineSync } from "@/hooks/use-offline-sync"; // Import useOfflineSync
 
 const queryClient = new QueryClient();
+
+const AppContent = () => {
+  useOfflineSync(); // Activate the offline sync hook
+
+  return (
+    <Routes>
+      <Route path="/login" element={<LoginPage />} />
+      
+      {/* Protected Routes */}
+      <Route element={<ProtectedRoute />}>
+        <Route path="/" element={<PageLayout><DashboardPage /></PageLayout>} />
+        <Route path="/transactions" element={<PageLayout><TransactionsPage /></PageLayout>} />
+        <Route path="/recurring-transactions" element={<PageLayout><RecurringTransactionsPage /></PageLayout>} />
+        <Route path="/accounts" element={<PageLayout><AccountsPage /></PageLayout>} />
+        <Route path="/categories" element={<PageLayout><CategoriesPage /></PageLayout>} />
+        <Route path="/budgets" element={<PageLayout><BudgetsPage /></PageLayout>} />
+        <Route path="/reports" element={<PageLayout><ReportsPage /></PageLayout>} />
+        <Route path="/settings" element={<PageLayout><SettingsPage /></PageLayout>} />
+        <Route path="/profile" element={<PageLayout><ProfilePage /></PageLayout>} />
+        <Route path="/components-showcase" element={<PageLayout><ComponentsShowcase /></PageLayout>} />
+      </Route>
+
+      {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
+      <Route path="*" element={<NotFound />} />
+    </Routes>
+  );
+};
 
 const App = () => (
   <QueryClientProvider client={queryClient}>
@@ -28,26 +56,7 @@ const App = () => (
       <Sonner />
       <BrowserRouter>
         <SessionContextProvider>
-          <Routes>
-            <Route path="/login" element={<LoginPage />} />
-            
-            {/* Protected Routes */}
-            <Route element={<ProtectedRoute />}>
-              <Route path="/" element={<PageLayout><DashboardPage /></PageLayout>} />
-              <Route path="/transactions" element={<PageLayout><TransactionsPage /></PageLayout>} />
-              <Route path="/recurring-transactions" element={<PageLayout><RecurringTransactionsPage /></PageLayout>} />
-              <Route path="/accounts" element={<PageLayout><AccountsPage /></PageLayout>} />
-              <Route path="/categories" element={<PageLayout><CategoriesPage /></PageLayout>} />
-              <Route path="/budgets" element={<PageLayout><BudgetsPage /></PageLayout>} /> {/* New Route */}
-              <Route path="/reports" element={<PageLayout><ReportsPage /></PageLayout>} />
-              <Route path="/settings" element={<PageLayout><SettingsPage /></PageLayout>} />
-              <Route path="/profile" element={<PageLayout><ProfilePage /></PageLayout>} />
-              <Route path="/components-showcase" element={<PageLayout><ComponentsShowcase /></PageLayout>} />
-            </Route>
-
-            {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
-            <Route path="*" element={<NotFound />} />
-          </Routes>
+          <AppContent />
         </SessionContextProvider>
       </BrowserRouter>
     </TooltipProvider>
