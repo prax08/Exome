@@ -12,7 +12,9 @@ import * as z from "zod";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { useSession } from "@/contexts/SessionContext";
-import { HexColorPicker } from "react-colorful"; // For color picker
+import { HexColorPicker } from "react-colorful";
+import { IconPicker } from "@/components/IconPicker";
+import * as LucideIcons from "lucide-react";
 
 // Define category type for client-side
 interface Category {
@@ -20,6 +22,7 @@ interface Category {
   name: string;
   type: 'income' | 'expense';
   color?: string | null;
+  icon?: string | null; // Add icon property
   created_at: string;
 }
 
@@ -30,6 +33,7 @@ const categoryFormSchema = z.object({
     required_error: "Category type is required.",
   }),
   color: z.string().optional().nullable(),
+  icon: z.string().optional().nullable(), // Add icon to schema
 });
 
 interface CategoryFormModalProps {
@@ -59,6 +63,7 @@ const CategoryFormModal: React.FC<CategoryFormModalProps> = ({
       name: "",
       type: "expense",
       color: "#60A5FA", // Default blue color
+      icon: "Tag", // Default icon
     },
   });
 
@@ -69,12 +74,15 @@ const CategoryFormModal: React.FC<CategoryFormModalProps> = ({
           name: editingCategory.name,
           type: editingCategory.type,
           color: editingCategory.color || "#60A5FA",
+          icon: editingCategory.icon || "Tag", // Load existing icon or default
         });
       } else {
         form.reset({
+          amount: 0, // This line was incorrect, should not be here for category form
           name: "",
           type: "expense",
           color: "#60A5FA",
+          icon: "Tag", // Default icon for new categories
         });
       }
     }
@@ -90,6 +98,7 @@ const CategoryFormModal: React.FC<CategoryFormModalProps> = ({
       name: values.name,
       type: values.type,
       color: values.color || null,
+      icon: values.icon || null, // Save the selected icon
     };
 
     if (editingCategory) {
@@ -125,6 +134,8 @@ const CategoryFormModal: React.FC<CategoryFormModalProps> = ({
       }
     }
   };
+
+  const CurrentIcon = form.watch("icon") ? (LucideIcons as any)[form.watch("icon")!] : LucideIcons.Tag;
 
   return (
     <Modal
@@ -202,6 +213,30 @@ const CategoryFormModal: React.FC<CategoryFormModalProps> = ({
                     <HexColorPicker color={field.value || "#60A5FA"} onChange={field.onChange} />
                   </div>
                 )}
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+          <FormField
+            control={form.control}
+            name="icon"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Icon (Optional)</FormLabel>
+                <FormControl>
+                  <IconPicker
+                    currentIcon={field.value || "Tag"}
+                    onSelectIcon={field.onChange}
+                  >
+                    <Button
+                      variant="outline"
+                      className="w-full justify-start"
+                    >
+                      <CurrentIcon className="mr-2 h-4 w-4" />
+                      {field.value || "Select an icon"}
+                    </Button>
+                  </IconPicker>
+                </FormControl>
                 <FormMessage />
               </FormItem>
             )}

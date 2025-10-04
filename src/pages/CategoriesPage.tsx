@@ -29,6 +29,7 @@ import {
 import { cn } from "@/lib/utils";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { toast } from "sonner";
+import * as LucideIcons from "lucide-react"; // Import all Lucide icons
 
 // Define category type for client-side
 interface Category {
@@ -36,6 +37,7 @@ interface Category {
   name: string;
   type: 'income' | 'expense';
   color?: string | null;
+  icon?: string | null; // Add icon property
   created_at: string;
 }
 
@@ -135,59 +137,19 @@ const CategoriesPage: React.FC = () => {
           {isMobile ? (
             // Mobile view: Cards
             <div className="space-y-4">
-              {categories.map((category) => (
-                <Card key={category.id}>
-                  <CardContent className="p-4">
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center space-x-3">
-                        <Tag className="h-5 w-5" style={{ color: category.color || undefined }} />
-                        <div>
-                          <p className="font-medium">{category.name}</p>
-                          <p className="text-sm text-muted-foreground capitalize">{category.type}</p>
+              {categories.map((category) => {
+                const IconComponent = category.icon ? (LucideIcons as any)[category.icon] : LucideIcons.Tag;
+                return (
+                  <Card key={category.id}>
+                    <CardContent className="p-4">
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center space-x-3">
+                          <IconComponent className="h-5 w-5" style={{ color: category.color || undefined }} />
+                          <div>
+                            <p className="font-medium">{category.name}</p>
+                            <p className="text-sm text-muted-foreground capitalize">{category.type}</p>
+                          </div>
                         </div>
-                      </div>
-                      <DropdownMenu>
-                        <DropdownMenuTrigger asChild>
-                          <Button variant="ghost" className="h-8 w-8 p-0">
-                            <span className="sr-only">Open menu</span>
-                            <MoreHorizontal className="h-4 w-4" />
-                          </Button>
-                        </DropdownMenuTrigger>
-                        <DropdownMenuContent align="end">
-                          <DropdownMenuLabel>Actions</DropdownMenuLabel>
-                          <DropdownMenuItem onClick={() => handleEditCategory(category)}>Edit</DropdownMenuItem>
-                          <DropdownMenuSeparator />
-                          <DropdownMenuItem onClick={() => handleDeleteCategory(category.id)} className="text-destructive">
-                            Delete
-                          </DropdownMenuItem>
-                        </DropdownMenuContent>
-                      </DropdownMenu>
-                    </div>
-                  </CardContent>
-                </Card>
-              ))}
-            </div>
-          ) : (
-            // Desktop view: Table
-            <div className="rounded-md border">
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead className="w-[50px]">Color</TableHead>
-                    <TableHead>Name</TableHead>
-                    <TableHead>Type</TableHead>
-                    <TableHead className="text-right">Actions</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {categories.map((category) => (
-                    <TableRow key={category.id}>
-                      <TableCell>
-                        <div className="h-5 w-5 rounded-full border" style={{ backgroundColor: category.color || undefined }} />
-                      </TableCell>
-                      <TableCell className="font-medium">{category.name}</TableCell>
-                      <TableCell className="capitalize">{category.type}</TableCell>
-                      <TableCell className="text-right">
                         <DropdownMenu>
                           <DropdownMenuTrigger asChild>
                             <Button variant="ghost" className="h-8 w-8 p-0">
@@ -204,9 +166,59 @@ const CategoriesPage: React.FC = () => {
                             </DropdownMenuItem>
                           </DropdownMenuContent>
                         </DropdownMenu>
-                      </TableCell>
-                    </TableRow>
-                  ))}
+                      </div>
+                    </CardContent>
+                  </Card>
+                );
+              })}
+            </div>
+          ) : (
+            // Desktop view: Table
+            <div className="rounded-md border">
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead className="w-[50px]">Icon</TableHead>
+                    <TableHead className="w-[50px]">Color</TableHead>
+                    <TableHead>Name</TableHead>
+                    <TableHead>Type</TableHead>
+                    <TableHead className="text-right">Actions</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {categories.map((category) => {
+                    const IconComponent = category.icon ? (LucideIcons as any)[category.icon] : LucideIcons.Tag;
+                    return (
+                      <TableRow key={category.id}>
+                        <TableCell>
+                          <IconComponent className="h-5 w-5" style={{ color: category.color || undefined }} />
+                        </TableCell>
+                        <TableCell>
+                          <div className="h-5 w-5 rounded-full border" style={{ backgroundColor: category.color || undefined }} />
+                        </TableCell>
+                        <TableCell className="font-medium">{category.name}</TableCell>
+                        <TableCell className="capitalize">{category.type}</TableCell>
+                        <TableCell className="text-right">
+                          <DropdownMenu>
+                            <DropdownMenuTrigger asChild>
+                              <Button variant="ghost" className="h-8 w-8 p-0">
+                                <span className="sr-only">Open menu</span>
+                                <MoreHorizontal className="h-4 w-4" />
+                              </Button>
+                            </DropdownMenuTrigger>
+                            <DropdownMenuContent align="end">
+                              <DropdownMenuLabel>Actions</DropdownMenuLabel>
+                              <DropdownMenuItem onClick={() => handleEditCategory(category)}>Edit</DropdownMenuItem>
+                              <DropdownMenuSeparator />
+                              <DropdownMenuItem onClick={() => handleDeleteCategory(category.id)} className="text-destructive">
+                                Delete
+                              </DropdownMenuItem>
+                            </DropdownMenuContent>
+                          </DropdownMenu>
+                        </TableCell>
+                      </TableRow>
+                    );
+                  })}
                 </TableBody>
               </Table>
             </div>
