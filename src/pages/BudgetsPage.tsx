@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useMemo } from "react";
+import React, { useState } from "react";
 import { PlusCircle, Wallet, MoreHorizontal, Tag, TrendingUp } from "lucide-react";
 import { Button } from "@/components/Button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/Card";
@@ -21,7 +21,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { ProgressBar } from "@/components/ProgressBar"; // Import the new ProgressBar
 import { cn } from "@/lib/utils";
-// import { useIsMobile } from "@/hooks/use-mobile"; // Removed unused import
+// import { useIsMobile } from "@/hooks/use-mobile"; // Removed unused variable
 import { toast } from "sonner";
 
 // Define budget type for client-side
