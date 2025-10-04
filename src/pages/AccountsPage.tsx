@@ -4,7 +4,7 @@ import * as React from "react";
 import { EmptyState } from "@/components/EmptyState";
 import { Wallet, PlusCircle, MoreHorizontal, Banknote, PiggyBank, CreditCard, Landmark, TrendingUp, HandCoins, CircleDollarSign } from "lucide-react";
 import { Button } from "@/components/Button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/Card"; // Removed CardDescription
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/Card";
 import { ResponsiveGrid } from "@/components/ResponsiveGrid";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";

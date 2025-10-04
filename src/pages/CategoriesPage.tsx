@@ -3,7 +3,7 @@
 import React, { useState } from "react";
 import { PlusCircle, Tag, MoreHorizontal } from "lucide-react";
 import { Button } from "@/components/Button";
-import { Card, CardContent } from "@/components/Card"; // Removed unused CardHeader, CardTitle, CardDescription
+import { Card, CardContent } from "@/components/Card";
 import { EmptyState } from "@/components/EmptyState";
 import { Loading } from "@/components/Loading";
 import { useQuery } from "@tanstack/react-query";
@@ -26,7 +26,6 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { cn } from "@/lib/utils";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { toast } from "sonner";
 import * as LucideIcons from "lucide-react"; // Import all Lucide icons

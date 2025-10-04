@@ -22,7 +22,6 @@ const CategoryDistributionChart: React.FC<CategoryDistributionChartProps> = ({ d
     innerRadius,
     outerRadius,
     percent,
-    index: _index, // Renamed to _index
   }: any) => {
     const radius = innerRadius + (outerRadius - innerRadius) * 0.5;
     const x = cx + radius * Math.cos(-midAngle * RADIAN);
@@ -60,7 +59,7 @@ const CategoryDistributionChart: React.FC<CategoryDistributionChartProps> = ({ d
           ))}
         </Pie>
         <Tooltip
-          formatter={(value: number, _name: string, props: any) => [`₹${value.toFixed(2)}`, props.payload.name]} // Renamed to _name
+          formatter={(value: number, _name: string, props: any) => [`₹${value.toFixed(2)}`, props.payload.name]}
           contentStyle={{
             backgroundColor: 'hsl(var(--card))',
             borderColor: 'hsl(var(--border))',

@@ -13,7 +13,7 @@ import {
   Tag,
   Paperclip,
   CreditCard,
-} from "lucide-react"; // Removed IndianRupee
+} from "lucide-react";
 import { Button } from "@/components/Button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/Card";
 import { EmptyState } from "@/components/EmptyState";
@@ -107,7 +107,7 @@ const TransactionsPage: React.FC = () => {
 
   // Pagination states
   const [currentPage, setCurrentPage] = useState(1);
-  const [itemsPerPage] = useState(10); // Removed setItemsPerPage as it's not used
+  const itemsPerPage = 10; // Fixed items per page
 
   // Sorting states
   const [sortColumn, setSortColumn] = useState<SortColumn>('date');

@@ -3,7 +3,7 @@
 import * as React from "react";
 import { useState, useMemo } from "react";
 import { EmptyState } from "@/components/EmptyState";
-import { BarChart, FileText, TrendingUp, PieChart as PieChartIcon } from "lucide-react"; // Removed Filter
+import { BarChart, FileText, TrendingUp, PieChart as PieChartIcon } from "lucide-react";
 import { Button } from "@/components/Button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/Card";
 import { DateRangePicker } from "@/components/DateRangePicker";

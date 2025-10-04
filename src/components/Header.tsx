@@ -1,6 +1,6 @@
 import * as React from "react";
 import { Link } from "react-router-dom";
-import { Bell, Menu, User as UserIcon } from "lucide-react"; // Removed unused imports
+import { Bell, Menu, User as UserIcon } from "lucide-react";
 import { Button } from "@/components/Button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
@@ -22,7 +22,7 @@ const Header: React.FC<HeaderProps> = ({
   className,
   ...props
 }) => {
-  const { user } = useSession(); // Removed unused 'session'
+  const { user } = useSession();
 
   const handleLogout = async () => {
     const { error } = await supabase.auth.signOut();
@@ -106,7 +106,7 @@ const Header: React.FC<HeaderProps> = ({
             <Link to="/transactions" className="hover:text-primary">Transactions</Link>
             <Link to="/recurring-transactions" className="hover:text-primary">Recurring</Link>
             <Link to="/categories" className="hover:text-primary">Categories</Link>
-            <Link to="/budgets" className="hover:text-primary">Budgets</Link> {/* New Link */}
+            <Link to="/budgets" className="hover:text-primary">Budgets</Link>
             <Link to="/accounts" className="hover:text-primary">Accounts</Link>
             <Link to="/reports" className="hover:text-primary">Reports</Link>
           </nav>

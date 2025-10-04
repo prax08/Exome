@@ -133,6 +133,7 @@ const TransactionFormModal: React.FC<TransactionFormModalProps> = ({
     }
 
     const transactionData = {
+      user_id: user.id, // Include user_id for offline storage
       amount: values.amount,
       type: values.type,
       description: values.description,
@@ -149,7 +150,7 @@ const TransactionFormModal: React.FC<TransactionFormModalProps> = ({
         // Save to localforage for offline update
         try {
           const offlineUpdateKey = `offline-update-${editingTransaction.id}`;
-          await offlineStore.setItem(offlineUpdateKey, { ...transactionData, id: editingTransaction.id, user_id: user.id, local_status: 'pending-update' });
+          await offlineStore.setItem(offlineUpdateKey, { ...transactionData, id: editingTransaction.id, local_status: 'pending-update' });
           toast.success("Transaction update saved offline. It will sync when you are back online!");
           onOpenChange(false);
           onSuccess(); // Trigger refetch to potentially show a placeholder or update UI
@@ -181,7 +182,7 @@ const TransactionFormModal: React.FC<TransactionFormModalProps> = ({
         try {
           const localId = `temp-${Date.now()}`; // Temporary ID for offline new transactions
           const offlineTransactionKey = `offline-insert-${localId}`;
-          await offlineStore.setItem(offlineTransactionKey, { ...transactionData, user_id: user.id, local_id: localId, local_status: 'pending-insert' });
+          await offlineStore.setItem(offlineTransactionKey, { ...transactionData, local_id: localId, local_status: 'pending-insert' });
           toast.success("Transaction saved offline. It will sync when you are back online!");
           onOpenChange(false);
           onSuccess(); // Trigger refetch to potentially show a placeholder or update UI
@@ -192,11 +193,8 @@ const TransactionFormModal: React.FC<TransactionFormModalProps> = ({
         return;
       }
 
-      const { error } = await supabase.from('transactions').insert({
-        user_id: user.id, // Explicitly add user_id here
-        ...transactionData,
-      });
-
+      const { error } = await supabase.from('transactions').insert(transactionData); // Removed redundant user_id
+      
       if (error) {
         console.error("Error adding transaction:", error);
         toast.error(`Failed to add transaction: ${error.message}`);
@@ -295,7 +293,7 @@ const TransactionFormModal: React.FC<TransactionFormModalProps> = ({
               <FormItem>
                 <FormLabel>Description</FormLabel>
                 <FormControl>
-                  <Input placeholder="Groceries, Salary, Rent, etc." {...field} value={field.value || ""} error={!!form.formState.errors.description} />
+                  <Input placeholder="Groceries, Salary, Rent, etc." {...field} error={!!form.formState.errors.description} />
                 </FormControl>
                 <FormMessage />
               </FormItem>
