@@ -1,28 +1,39 @@
 import * as React from "react";
 import { Link } from "react-router-dom";
-import { Bell, Menu } from "lucide-react";
+import { Bell, Menu, User as UserIcon } from "lucide-react";
 import { Button } from "@/components/Button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 import { Separator } from "@/components/ui/separator";
 import { cn } from "@/lib/utils";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
+import { useSession } from "@/contexts/SessionContext";
+import { toast } from "sonner";
+import { supabase } from "@/integrations/supabase/client"; // Import supabase client
 
 interface HeaderProps extends React.HTMLAttributes<HTMLDivElement> {
-  // You can add props for user info, notification count, etc.
-  userName?: string;
-  userAvatarUrl?: string;
   notificationCount?: number;
   onMenuClick?: () => void;
 }
 
 const Header: React.FC<HeaderProps> = ({
-  userName = "User",
-  userAvatarUrl,
   notificationCount = 0,
   onMenuClick,
   className,
   ...props
 }) => {
+  const { user, session } = useSession();
+
+  const handleLogout = async () => {
+    const { error } = await supabase.auth.signOut();
+    if (error) {
+      console.error("Error logging out:", error);
+      toast.error("Failed to log out.");
+    } else {
+      toast.success("Logged out successfully!");
+    }
+  };
+
   return (
     <header
       className={cn(
@@ -33,7 +44,6 @@ const Header: React.FC<HeaderProps> = ({
     >
       <div className="container flex h-16 items-center justify-between">
         <div className="flex items-center space-x-4">
-          {/* Hamburger Menu for mobile */}
           <Sheet>
             <SheetTrigger asChild>
               <Button variant="ghost" size="icon" className="md:hidden" onClick={onMenuClick}>
@@ -49,12 +59,14 @@ const Header: React.FC<HeaderProps> = ({
               </div>
               <Separator />
               <nav className="flex flex-col p-4 space-y-2">
-                {/* Placeholder for menu items */}
                 <Link to="/" className="block px-4 py-2 text-sm hover:bg-accent rounded-md">
                   Dashboard
                 </Link>
                 <Link to="/transactions" className="block px-4 py-2 text-sm hover:bg-accent rounded-md">
                   Transactions
+                </Link>
+                <Link to="/accounts" className="block px-4 py-2 text-sm hover:bg-accent rounded-md">
+                  Accounts
                 </Link>
                 <Link to="/reports" className="block px-4 py-2 text-sm hover:bg-accent rounded-md">
                   Reports
@@ -62,17 +74,28 @@ const Header: React.FC<HeaderProps> = ({
                 <Link to="/settings" className="block px-4 py-2 text-sm hover:bg-accent rounded-md">
                   Settings
                 </Link>
+                {user && (
+                  <>
+                    <Separator />
+                    <Link to="/profile" className="block px-4 py-2 text-sm hover:bg-accent rounded-md">
+                      Profile
+                    </Link>
+                    <Button variant="ghost" className="w-full justify-start px-4 py-2 text-sm hover:bg-accent rounded-md" onClick={handleLogout}>
+                      Logout
+                    </Button>
+                  </>
+                )}
               </nav>
             </SheetContent>
           </Sheet>
 
-          {/* Desktop Navigation (hidden on mobile) */}
           <Link to="/" className="hidden md:block font-bold text-lg">
             Exome Instruments
           </Link>
           <nav className="hidden md:flex items-center space-x-4 text-sm font-medium">
             <Link to="/" className="hover:text-primary">Dashboard</Link>
             <Link to="/transactions" className="hover:text-primary">Transactions</Link>
+            <Link to="/accounts" className="hover:text-primary">Accounts</Link>
             <Link to="/reports" className="hover:text-primary">Reports</Link>
           </nav>
         </div>
@@ -87,10 +110,40 @@ const Header: React.FC<HeaderProps> = ({
             )}
             <span className="sr-only">Notifications</span>
           </Button>
-          <Avatar>
-            <AvatarImage src={userAvatarUrl} alt={userName} />
-            <AvatarFallback>{userName.charAt(0)}</AvatarFallback>
-          </Avatar>
+
+          {user ? (
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="ghost" className="relative h-8 w-8 rounded-full">
+                  <Avatar className="h-8 w-8">
+                    <AvatarImage src={user.user_metadata?.avatar_url || undefined} alt={user.email || "User"} />
+                    <AvatarFallback>{user.email?.charAt(0).toUpperCase() || <UserIcon className="h-4 w-4" />}</AvatarFallback>
+                  </Avatar>
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent className="w-56" align="end" forceMount>
+                <DropdownMenuLabel className="font-normal">
+                  <div className="flex flex-col space-y-1">
+                    <p className="text-sm font-medium leading-none">{user.email}</p>
+                    <p className="text-xs leading-none text-muted-foreground">
+                      {user.email}
+                    </p>
+                  </div>
+                </DropdownMenuLabel>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem asChild>
+                  <Link to="/profile">Profile</Link>
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={handleLogout}>
+                  Log out
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+          ) : (
+            <Button asChild>
+              <Link to="/login">Login</Link>
+            </Button>
+          )}
         </div>
       </div>
     </header>
