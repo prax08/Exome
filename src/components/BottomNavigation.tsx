@@ -1,6 +1,6 @@
 import * as React from "react";
 import { Link, useLocation } from "react-router-dom";
-import { Home, IndianRupee, BarChart, Settings, Wallet, Repeat } from "lucide-react"; // Changed DollarSign to IndianRupee, added Repeat
+import { Home, IndianRupee, BarChart, Settings, Wallet, Repeat, Tag } from "lucide-react"; // Added Tag icon
 import { cn } from "@/lib/utils";
 
 interface NavItem {
@@ -12,7 +12,8 @@ interface NavItem {
 const navItems: NavItem[] = [
   { label: "Home", icon: Home, path: "/" },
   { label: "Transactions", icon: IndianRupee, path: "/transactions" },
-  { label: "Recurring", icon: Repeat, path: "/recurring-transactions" }, // New Nav Item
+  { label: "Recurring", icon: Repeat, path: "/recurring-transactions" },
+  { label: "Categories", icon: Tag, path: "/categories" }, // New Nav Item
   { label: "Accounts", icon: Wallet, path: "/accounts" },
   { label: "Reports", icon: BarChart, path: "/reports" },
   { label: "Settings", icon: Settings, path: "/settings" },

@@ -13,7 +13,8 @@ import SettingsPage from "./pages/SettingsPage";
 import LoginPage from "./pages/LoginPage";
 import ProfilePage from "./pages/ProfilePage";
 import DashboardPage from "./pages/DashboardPage";
-import RecurringTransactionsPage from "./pages/RecurringTransactionsPage"; // Import new page
+import RecurringTransactionsPage from "./pages/RecurringTransactionsPage";
+import CategoriesPage from "./pages/CategoriesPage"; // Import new page
 import { SessionContextProvider } from "@/contexts/SessionContext";
 import { ProtectedRoute } from "@/components/ProtectedRoute";
 
@@ -33,8 +34,9 @@ const App = () => (
             <Route element={<ProtectedRoute />}>
               <Route path="/" element={<PageLayout><DashboardPage /></PageLayout>} />
               <Route path="/transactions" element={<PageLayout><TransactionsPage /></PageLayout>} />
-              <Route path="/recurring-transactions" element={<PageLayout><RecurringTransactionsPage /></PageLayout>} /> {/* New Route */}
+              <Route path="/recurring-transactions" element={<PageLayout><RecurringTransactionsPage /></PageLayout>} />
               <Route path="/accounts" element={<PageLayout><AccountsPage /></PageLayout>} />
+              <Route path="/categories" element={<PageLayout><CategoriesPage /></PageLayout>} /> {/* New Route */}
               <Route path="/reports" element={<PageLayout><ReportsPage /></PageLayout>} />
               <Route path="/settings" element={<PageLayout><SettingsPage /></PageLayout>} />
               <Route path="/profile" element={<PageLayout><ProfilePage /></PageLayout>} />

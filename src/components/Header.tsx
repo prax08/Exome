@@ -1,6 +1,6 @@
 import * as React from "react";
 import { Link } from "react-router-dom";
-import { Bell, Menu, User as UserIcon, Repeat } from "lucide-react"; // Import Repeat icon
+import { Bell, Menu, User as UserIcon, Repeat, Tag } from "lucide-react"; // Import Tag icon
 import { Button } from "@/components/Button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
@@ -71,6 +71,9 @@ const Header: React.FC<HeaderProps> = ({
                 <Link to="/accounts" className="block px-4 py-2 text-sm hover:bg-accent rounded-md">
                   Accounts
                 </Link>
+                <Link to="/categories" className="block px-4 py-2 text-sm hover:bg-accent rounded-md">
+                  Categories
+                </Link>
                 <Link to="/reports" className="block px-4 py-2 text-sm hover:bg-accent rounded-md">
                   Reports
                 </Link>
@@ -98,7 +101,8 @@ const Header: React.FC<HeaderProps> = ({
           <nav className="hidden md:flex items-center space-x-4 text-sm font-medium">
             <Link to="/" className="hover:text-primary">Dashboard</Link>
             <Link to="/transactions" className="hover:text-primary">Transactions</Link>
-            <Link to="/recurring-transactions" className="hover:text-primary">Recurring</Link> {/* New Link */}
+            <Link to="/recurring-transactions" className="hover:text-primary">Recurring</Link>
+            <Link to="/categories" className="hover:text-primary">Categories</Link> {/* New Link */}
             <Link to="/accounts" className="hover:text-primary">Accounts</Link>
             <Link to="/reports" className="hover:text-primary">Reports</Link>
           </nav>
