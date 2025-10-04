@@ -14,6 +14,7 @@ import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { useSession } from "@/contexts/SessionContext";
 import { format } from "date-fns";
+import { CategorySelect } from "@/components/CategorySelect"; // Import CategorySelect
 
 // Define transaction type for client-side
 interface Transaction {
@@ -22,6 +23,7 @@ interface Transaction {
   type: 'income' | 'expense';
   description: string;
   date: string; // ISO date string
+  category_id?: string | null; // Add category_id
   created_at: string;
 }
 
@@ -38,6 +40,7 @@ const transactionFormSchema = z.object({
   date: z.date({
     required_error: "A transaction date is required.",
   }),
+  category_id: z.string().optional().nullable(), // Add category_id to schema
 });
 
 interface TransactionFormModalProps {
@@ -69,6 +72,7 @@ const TransactionFormModal: React.FC<TransactionFormModalProps> = ({
       type: initialType,
       description: "",
       date: new Date(),
+      category_id: null, // Initialize category_id
     },
   });
 
@@ -80,6 +84,7 @@ const TransactionFormModal: React.FC<TransactionFormModalProps> = ({
           type: editingTransaction.type,
           description: editingTransaction.description,
           date: new Date(editingTransaction.date),
+          category_id: editingTransaction.category_id || null, // Load category_id
         });
       } else {
         form.reset({
@@ -87,6 +92,7 @@ const TransactionFormModal: React.FC<TransactionFormModalProps> = ({
           type: initialType,
           description: "",
           date: new Date(),
+          category_id: null,
         });
       }
     }
@@ -98,16 +104,19 @@ const TransactionFormModal: React.FC<TransactionFormModalProps> = ({
       return;
     }
 
+    const transactionData = {
+      amount: values.amount,
+      type: values.type,
+      description: values.description,
+      date: format(values.date, 'yyyy-MM-dd'),
+      category_id: values.category_id || null, // Ensure null if empty string
+    };
+
     if (editingTransaction) {
       // Update existing transaction
       const { error } = await supabase
         .from('transactions')
-        .update({
-          amount: values.amount,
-          type: values.type,
-          description: values.description,
-          date: format(values.date, 'yyyy-MM-dd'),
-        })
+        .update(transactionData)
         .eq('id', editingTransaction.id)
         .eq('user_id', user.id);
 
@@ -123,10 +132,7 @@ const TransactionFormModal: React.FC<TransactionFormModalProps> = ({
       // Add new transaction
       const { error } = await supabase.from('transactions').insert({
         user_id: user.id,
-        amount: values.amount,
-        type: values.type,
-        description: values.description,
-        date: format(values.date, 'yyyy-MM-dd'),
+        ...transactionData,
       });
 
       if (error) {
@@ -171,6 +177,23 @@ const TransactionFormModal: React.FC<TransactionFormModalProps> = ({
                   onValueChange={field.onChange}
                   value={field.value}
                   className={!!form.formState.errors.type ? "border-destructive focus-visible:ring-destructive" : ""}
+                />
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+          <FormField
+            control={form.control}
+            name="category_id"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Category</FormLabel>
+                <CategorySelect
+                  transactionType={form.watch('type')} // Filter categories based on selected transaction type
+                  value={field.value || ""}
+                  onValueChange={field.onChange}
+                  placeholder="Select a category (optional)"
+                  className={!!form.formState.errors.category_id ? "border-destructive focus-visible:ring-destructive" : ""}
                 />
                 <FormMessage />
               </FormItem>

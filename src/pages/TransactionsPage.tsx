@@ -11,6 +11,7 @@ import {
   CalendarDays,
   Search,
   ArrowUpDown,
+  Tag, // Import Tag icon for categories
 } from "lucide-react";
 import { Button } from "@/components/Button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/Card";
@@ -44,7 +45,8 @@ import {
 import { cn } from "@/lib/utils";
 import { Pagination, PaginationContent, PaginationItem, PaginationPrevious, PaginationLink, PaginationNext } from "@/components/ui/pagination";
 import { useIsMobile } from "@/hooks/use-mobile";
-import { toast } from "sonner"; // Import toast from sonner
+import { toast } from "sonner";
+import { CategorySelect } from "@/components/CategorySelect"; // Import CategorySelect
 
 // Define transaction type for client-side
 interface Transaction {
@@ -53,6 +55,9 @@ interface Transaction {
   type: 'income' | 'expense';
   description: string;
   date: string; // ISO date string
+  category_id?: string | null; // Add category_id
+  category_name?: string | null; // Add category_name for display
+  category_color?: string | null; // Add category_color for display
   created_at: string;
 }
 
@@ -78,6 +83,7 @@ const TransactionsPage: React.FC = () => {
   const [transactionTypeFilter, setTransactionTypeFilter] = useState<TransactionTypeFilter>('all');
   const [dateRange, setDateRange] = useState<DateRange | undefined>(undefined);
   const [searchTerm, setSearchTerm] = useState("");
+  const [categoryFilter, setCategoryFilter] = useState<string | undefined>(undefined); // New category filter state
 
   // Pagination states
   const [currentPage, setCurrentPage] = useState(1);
@@ -91,6 +97,7 @@ const TransactionsPage: React.FC = () => {
     typeFilter: TransactionTypeFilter,
     range: DateRange | undefined,
     search: string,
+    category: string | undefined, // Add category to fetch params
     page: number,
     limit: number,
     column: SortColumn,
@@ -100,7 +107,13 @@ const TransactionsPage: React.FC = () => {
 
     let query = supabase
       .from('transactions')
-      .select('*', { count: 'exact' })
+      .select(`
+        *,
+        categories (
+          name,
+          color
+        )
+      `, { count: 'exact' })
       .eq('user_id', user.id);
 
     if (typeFilter !== 'all') {
@@ -114,6 +127,9 @@ const TransactionsPage: React.FC = () => {
     }
     if (search) {
       query = query.ilike('description', `%${search}%`);
+    }
+    if (category) { // Apply category filter
+      query = query.eq('category_id', category);
     }
 
     query = query.order(column, { ascending: direction === 'asc' });
@@ -129,7 +145,15 @@ const TransactionsPage: React.FC = () => {
       console.error("Error fetching transactions:", error);
       throw new Error("Failed to fetch transactions.");
     }
-    return { data: data as Transaction[], count: count || 0 };
+
+    // Map data to include category name and color directly
+    const transactionsWithCategories = data.map((t: any) => ({
+      ...t,
+      category_name: t.categories?.name || null,
+      category_color: t.categories?.color || null,
+    })) as Transaction[];
+
+    return { data: transactionsWithCategories, count: count || 0 };
   };
 
   const { data, isLoading, error, refetch } = useQuery({
@@ -139,6 +163,7 @@ const TransactionsPage: React.FC = () => {
       transactionTypeFilter,
       dateRange,
       searchTerm,
+      categoryFilter, // Add categoryFilter to queryKey
       currentPage,
       itemsPerPage,
       sortColumn,
@@ -149,6 +174,7 @@ const TransactionsPage: React.FC = () => {
         transactionTypeFilter,
         dateRange,
         searchTerm,
+        categoryFilter, // Pass category filter
         currentPage,
         itemsPerPage,
         sortColumn,
@@ -292,16 +318,28 @@ const TransactionsPage: React.FC = () => {
           <CardTitle>Filter Transactions</CardTitle>
           <CardDescription>Refine your transaction view.</CardDescription>
         </CardHeader>
-        <CardContent className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <CardContent className="grid grid-cols-1 md:grid-cols-4 gap-4"> {/* Adjusted grid for new filter */}
           <div className="col-span-1">
             <Select
               options={transactionTypeFilterOptions}
               placeholder="Filter by type"
               onValueChange={(value) => {
                 setTransactionTypeFilter(value as TransactionTypeFilter);
+                setCategoryFilter(undefined); // Reset category filter when type changes
                 setCurrentPage(1); // Reset page on filter change
               }}
               value={transactionTypeFilter}
+            />
+          </div>
+          <div className="col-span-1">
+            <CategorySelect
+              transactionType={transactionTypeFilter} // Pass selected transaction type to filter categories
+              value={categoryFilter || ""}
+              onValueChange={(value) => {
+                setCategoryFilter(value || undefined);
+                setCurrentPage(1); // Reset page on filter change
+              }}
+              placeholder="Filter by category"
             />
           </div>
           <div className="col-span-1">
@@ -346,6 +384,12 @@ const TransactionsPage: React.FC = () => {
                         )}
                         <div>
                           <p className="font-medium">{transaction.description}</p>
+                          {transaction.category_name && (
+                            <div className="flex items-center text-xs text-muted-foreground">
+                              <Tag className="h-3 w-3 mr-1" style={{ color: transaction.category_color || undefined }} />
+                              <span>{transaction.category_name}</span>
+                            </div>
+                          )}
                           <p className="text-sm text-muted-foreground">{format(new Date(transaction.date), 'PPP')}</p>
                         </div>
                       </div>
@@ -383,6 +427,7 @@ const TransactionsPage: React.FC = () => {
                   <TableRow>
                     <TableHead className="w-[50px]">Type</TableHead>
                     <TableHead>Description</TableHead>
+                    <TableHead>Category</TableHead> {/* New Category column */}
                     <TableHead
                       className="cursor-pointer hover:text-primary"
                       onClick={() => handleSort('date')}
@@ -415,6 +460,16 @@ const TransactionsPage: React.FC = () => {
                         )}
                       </TableCell>
                       <TableCell className="font-medium">{transaction.description}</TableCell>
+                      <TableCell>
+                        {transaction.category_name ? (
+                          <div className="flex items-center">
+                            <Tag className="h-4 w-4 mr-2" style={{ color: transaction.category_color || undefined }} />
+                            <span>{transaction.category_name}</span>
+                          </div>
+                        ) : (
+                          <span className="text-muted-foreground">-</span>
+                        )}
+                      </TableCell>
                       <TableCell>{format(new Date(transaction.date), 'PPP')}</TableCell>
                       <TableCell className={`text-right font-semibold ${transaction.type === 'income' ? 'text-green-600' : 'text-red-600'}`}>
                         ₹{transaction.amount.toFixed(2)}
