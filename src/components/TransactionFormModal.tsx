@@ -147,9 +147,20 @@ const TransactionFormModal: React.FC<TransactionFormModalProps> = ({
     if (editingTransaction) {
       // Update existing transaction
       if (!isOnline) {
-        toast.warning("You are offline. Cannot update existing transactions at this time.");
+        // Save to localforage for offline update
+        try {
+          const offlineUpdateKey = `offline-update-${editingTransaction.id}`;
+          await offlineStore.setItem(offlineUpdateKey, { ...transactionData, id: editingTransaction.id, local_status: 'pending-update' });
+          toast.success("Transaction update saved offline. It will sync when you are back online!");
+          onOpenChange(false);
+          onSuccess(); // Trigger refetch to potentially show a placeholder or update UI
+        } catch (localforageError) {
+          console.error("Error saving transaction update offline:", localforageError);
+          toast.error("Failed to save transaction update offline.");
+        }
         return;
       }
+      
       const { error } = await supabase
         .from('transactions')
         .update(transactionData)
@@ -169,8 +180,9 @@ const TransactionFormModal: React.FC<TransactionFormModalProps> = ({
       if (!isOnline) {
         // Save to localforage if offline
         try {
-          const offlineTransactionKey = `offline-transaction-${Date.now()}`;
-          await offlineStore.setItem(offlineTransactionKey, transactionData);
+          const localId = `temp-${Date.now()}`; // Temporary ID for offline new transactions
+          const offlineTransactionKey = `offline-insert-${localId}`;
+          await offlineStore.setItem(offlineTransactionKey, { ...transactionData, local_id: localId, local_status: 'pending-insert' });
           toast.success("Transaction saved offline. It will sync when you are back online!");
           onOpenChange(false);
           onSuccess(); // Trigger refetch to potentially show a placeholder or update UI
@@ -216,7 +228,7 @@ const TransactionFormModal: React.FC<TransactionFormModalProps> = ({
           <Button variant="secondary" onClick={() => onOpenChange(false)}>
             Cancel
           </Button>
-          <Button type="submit" form="transaction-form" disabled={form.formState.isSubmitting || (!isOnline && !!editingTransaction)}>
+          <Button type="submit" form="transaction-form" disabled={form.formState.isSubmitting}>
             {form.formState.isSubmitting ? (editingTransaction ? "Saving..." : "Adding...") : (editingTransaction ? "Save Changes" : "Add Transaction")}
           </Button>
         </div>
@@ -335,13 +347,13 @@ const TransactionFormModal: React.FC<TransactionFormModalProps> = ({
               </FormItem>
             )}
           />
-          {user && editingTransaction && ( // Only show ReceiptUpload for existing transactions
+          {user && (editingTransaction || form.watch('receipt_url')) && ( // Show ReceiptUpload for existing transactions or if a receipt is already set for a new one
             <FormItem>
               <FormLabel>Receipt</FormLabel>
               <FormControl>
                 <ReceiptUpload
                   userId={user.id}
-                  transactionId={editingTransaction.id}
+                  transactionId={editingTransaction?.id || 'new-transaction'} // Use actual ID or a placeholder for new
                   currentReceiptUrl={form.watch("receipt_url")}
                   onUploadSuccess={handleReceiptUploadSuccess}
                   onRemoveSuccess={handleReceiptRemoveSuccess}
