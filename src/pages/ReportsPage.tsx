@@ -17,6 +17,7 @@ import { Loading } from "@/components/Loading";
 import { format, startOfMonth, endOfMonth, subMonths, eachMonthOfInterval, parseISO } from "date-fns";
 import { MonthlyTrendChart } from "@/components/charts/MonthlyTrendChart";
 import { CategoryDistributionChart } from "@/components/charts/CategoryDistributionChart";
+import { ComparativeBarChart } from "@/components/charts/ComparativeBarChart"; // Import new chart
 import { toast } from "sonner";
 
 interface Transaction {
@@ -40,12 +41,13 @@ interface Category {
   color?: string | null;
 }
 
-type ReportType = 'monthly_trends' | 'category_distribution_expense' | 'category_distribution_income';
+type ReportType = 'monthly_trends' | 'category_distribution_expense' | 'category_distribution_income' | 'category_spending_comparison';
 
 const reportTypeOptions = [
   { value: "monthly_trends", label: "Monthly Income/Expense Trends" },
   { value: "category_distribution_expense", label: "Expense Category Distribution" },
   { value: "category_distribution_income", label: "Income Category Distribution" },
+  { value: "category_spending_comparison", label: "Category Spending Comparison" }, // New report type
 ];
 
 const ReportsPage: React.FC = () => {
@@ -174,6 +176,27 @@ const ReportsPage: React.FC = () => {
     return Array.from(distributionMap.values()).sort((a, b) => b.value - a.value);
   }, [transactions, categoriesData, reportType, categoryFilter]);
 
+  const categorySpendingComparisonData = useMemo(() => {
+    if (!transactions || !categoriesData) return [];
+
+    const expenseTransactions = transactions.filter(t => t.type === 'expense');
+    const categoryMap = new Map<string, number>();
+
+    expenseTransactions.forEach(transaction => {
+      const categoryName = categoriesData.find(c => c.id === transaction.category_id)?.name || 'Uncategorized';
+      categoryMap.set(categoryName, (categoryMap.get(categoryName) || 0) + transaction.amount);
+    });
+
+    return Array.from(categoryMap.entries())
+      .sort(([, amountA], [, amountB]) => amountB - amountA)
+      .map(([name, value]) => ({
+        name,
+        value1: value,
+        label1: "Expenses",
+        color1: "hsl(0 84.2% 60.2%)", // Red
+      }));
+  }, [transactions, categoriesData]);
+
   const handleExportCSV = () => {
     if (!transactions || transactions.length === 0) {
       toast.info("No data to export.");
@@ -279,6 +302,7 @@ const ReportsPage: React.FC = () => {
             <CardTitle className="flex items-center gap-2">
               {reportType === 'monthly_trends' && <TrendingUp className="h-5 w-5" />}
               {(reportType === 'category_distribution_expense' || reportType === 'category_distribution_income') && <PieChartIcon className="h-5 w-5" />}
+              {reportType === 'category_spending_comparison' && <BarChart className="h-5 w-5" />}
               {reportTypeOptions.find(opt => opt.value === reportType)?.label}
             </CardTitle>
             <CardDescription>
@@ -291,6 +315,14 @@ const ReportsPage: React.FC = () => {
             )}
             {(reportType === 'category_distribution_expense' || reportType === 'category_distribution_income') && (
               <CategoryDistributionChart data={categoryDistributionData} />
+            )}
+            {reportType === 'category_spending_comparison' && (
+              <ComparativeBarChart
+                data={categorySpendingComparisonData}
+                dataKey1="value1"
+                label1="Total Spent"
+                color1="hsl(0 84.2% 60.2%)" // Red
+              />
             )}
           </CardContent>
         </Card>
