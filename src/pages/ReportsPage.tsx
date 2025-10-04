@@ -28,6 +28,9 @@ interface Transaction {
   category_id?: string | null;
   category_name?: string | null;
   category_color?: string | null;
+  receipt_url?: string | null; // Added missing property
+  vendor?: string | null; // Added missing property
+  payment_method?: string | null; // Added missing property
 }
 
 interface Category {
