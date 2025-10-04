@@ -10,7 +10,7 @@ import { Loading } from "@/components/Loading";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useSession } from "@/contexts/SessionContext";
-import { format } from "date-fns";
+import { format, startOfMonth, endOfMonth, subMonths } from "date-fns";
 import { Modal } from "@/components/Modal";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -20,6 +20,8 @@ import { Input } from "@/components/Input";
 import { Select } from "@/components/Select";
 import { DatePicker } from "@/components/DatePicker";
 import { toast } from "sonner";
+import { DateRange } from "react-day-picker";
+import { DateRangePicker } from "@/components/DateRangePicker"; // Import DateRangePicker
 
 // Define transaction type for client-side
 interface Transaction {
@@ -50,6 +52,10 @@ const DashboardPage: React.FC = () => {
   const { user } = useSession();
   const [isAddTransactionModalOpen, setIsAddTransactionModalOpen] = useState(false);
   const [selectedTransactionType, setSelectedTransactionType] = useState<'income' | 'expense'>('expense');
+  const [dateRange, setDateRange] = useState<DateRange | undefined>({
+    from: startOfMonth(new Date()),
+    to: endOfMonth(new Date()),
+  });
 
   const transactionForm = useForm<z.infer<typeof addTransactionSchema>>({
     resolver: zodResolver(addTransactionSchema),
@@ -61,15 +67,24 @@ const DashboardPage: React.FC = () => {
     },
   });
 
-  const fetchDashboardData = async () => {
+  const fetchDashboardData = async (range?: DateRange) => {
     if (!user) return { income: 0, expenses: 0, balance: 0, recentTransactions: [] };
 
-    const { data: transactions, error } = await supabase
+    let query = supabase
       .from('transactions')
       .select('*')
-      .eq('user_id', user.id)
-      .order('date', { ascending: false })
-      .limit(5); // Fetch recent 5 transactions
+      .eq('user_id', user.id);
+
+    if (range?.from) {
+      query = query.gte('date', format(range.from, 'yyyy-MM-dd'));
+    }
+    if (range?.to) {
+      query = query.lte('date', format(range.to, 'yyyy-MM-dd'));
+    }
+
+    query = query.order('date', { ascending: false });
+
+    const { data: transactions, error } = await query;
 
     if (error) {
       console.error("Error fetching dashboard data:", error);
@@ -89,17 +104,20 @@ const DashboardPage: React.FC = () => {
 
     const balance = totalIncome - totalExpenses;
 
+    // For recent transactions, we'll take the first 5 from the filtered list
+    const recentTransactions = transactions.slice(0, 5);
+
     return {
       income: totalIncome,
       expenses: totalExpenses,
       balance: balance,
-      recentTransactions: transactions,
+      recentTransactions: recentTransactions,
     };
   };
 
   const { data, isLoading, error, refetch } = useQuery({
-    queryKey: ['dashboardData', user?.id],
-    queryFn: fetchDashboardData,
+    queryKey: ['dashboardData', user?.id, dateRange], // Add dateRange to queryKey
+    queryFn: () => fetchDashboardData(dateRange),
     enabled: !!user, // Only run query if user is available
   });
 
@@ -228,6 +246,28 @@ const DashboardPage: React.FC = () => {
         </CardContent>
       </Card>
 
+      {/* Period Selector */}
+      <Card>
+        <CardHeader>
+          <CardTitle>Filter by Period</CardTitle>
+          <CardDescription>Select a date range to view transactions.</CardDescription>
+        </CardHeader>
+        <CardContent>
+          <DateRangePicker dateRange={dateRange} onSelect={setDateRange} />
+          <div className="mt-4 flex flex-wrap gap-2">
+            <Button variant="outline" onClick={() => setDateRange({ from: startOfMonth(new Date()), to: endOfMonth(new Date()) })}>
+              This Month
+            </Button>
+            <Button variant="outline" onClick={() => setDateRange({ from: startOfMonth(subMonths(new Date(), 1)), to: endOfMonth(subMonths(new Date(), 1)) })}>
+              Last Month
+            </Button>
+            <Button variant="outline" onClick={() => setDateRange(undefined)}>
+              All Time
+            </Button>
+          </div>
+        </CardContent>
+      </Card>
+
       {/* Recent Transactions */}
       <Card>
         <CardHeader>
@@ -264,17 +304,6 @@ const DashboardPage: React.FC = () => {
               action={<Button onClick={() => openAddTransactionModal('expense')} variant="primary">Add Transaction</Button>}
             />
           )}
-        </CardContent>
-      </Card>
-
-      {/* Period Selector (Placeholder for now) */}
-      <Card>
-        <CardHeader>
-          <CardTitle>Filter by Period</CardTitle>
-          <CardDescription>Select a date range to view transactions.</CardDescription>
-        </CardHeader>
-        <CardContent>
-          <p className="text-muted-foreground">Period selector coming soon!</p>
         </CardContent>
       </Card>
 
