@@ -13,7 +13,7 @@ import * as z from "zod";
 import { Form, FormField, FormItem, FormLabel, FormControl, FormMessage } from "@/components/Form";
 import { toast } from "sonner";
 import { Modal } from "@/components/Modal";
-import { AvatarUpload } from "@/components/AvatarUpload";
+import { AvatarUpload } from "@/components/AvatarUpload"; // Import AvatarUpload
 
 const profileSchema = z.object({
   first_name: z.string().min(1, { message: "First name is required." }).optional().or(z.literal("")),

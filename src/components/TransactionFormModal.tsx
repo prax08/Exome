@@ -193,8 +193,8 @@ const TransactionFormModal: React.FC<TransactionFormModalProps> = ({
         return;
       }
 
-      const { error } = await supabase.from('transactions').insert(transactionData); // Removed redundant user_id
-      
+      const { error } = await supabase.from('transactions').insert(transactionData);
+
       if (error) {
         console.error("Error adding transaction:", error);
         toast.error(`Failed to add transaction: ${error.message}`);

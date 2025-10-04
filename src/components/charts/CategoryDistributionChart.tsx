@@ -22,6 +22,7 @@ const CategoryDistributionChart: React.FC<CategoryDistributionChartProps> = ({ d
     innerRadius,
     outerRadius,
     percent,
+    index: _index, // Renamed to _index
   }: any) => {
     const radius = innerRadius + (outerRadius - innerRadius) * 0.5;
     const x = cx + radius * Math.cos(-midAngle * RADIAN);

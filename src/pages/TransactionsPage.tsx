@@ -107,7 +107,7 @@ const TransactionsPage: React.FC = () => {
 
   // Pagination states
   const [currentPage, setCurrentPage] = useState(1);
-  const itemsPerPage = 10; // Fixed items per page
+  const itemsPerPage = 10; // Fixed value, no setter needed
 
   // Sorting states
   const [sortColumn, setSortColumn] = useState<SortColumn>('date');

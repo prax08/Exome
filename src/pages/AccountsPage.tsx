@@ -301,7 +301,7 @@ const AccountsPage: React.FC = () => {
                       type="number"
                       placeholder="0.00"
                       {...field}
-                      onChange={(e) => field.onChange(parseFloat(e.target.value))}
+                      onChange={(e: React.ChangeEvent<HTMLInputElement>) => field.onChange(parseFloat(e.target.value))}
                       error={!!accountForm.formState.errors.balance}
                     />
                   </FormControl>

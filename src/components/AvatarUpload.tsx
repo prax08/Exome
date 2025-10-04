@@ -3,7 +3,6 @@
 import React, { useState, useEffect, useRef } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/Button";
-// import { Input } from "@/components/Input"; // Removed unused import
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { User as UserIcon, UploadCloud, XCircle } from "lucide-react";
 import { toast } from "sonner";

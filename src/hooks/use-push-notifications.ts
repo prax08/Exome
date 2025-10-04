@@ -34,7 +34,7 @@ const usePushNotifications = () => {
 
     const registration = await navigator.serviceWorker.ready;
     return registration.pushManager.getSubscription();
-  }, []);
+  }, [setIsLoading]);
 
   const updateSubscriptionStatus = useCallback(async () => {
     setIsLoading(true);
@@ -101,7 +101,7 @@ const usePushNotifications = () => {
     } finally {
       setIsLoading(false);
     }
-  }, [user, isSubscribed, permissionStatus]);
+  }, [user, isSubscribed, permissionStatus, VAPID_PUBLIC_KEY]);
 
   const unsubscribe = useCallback(async () => {
     if (!user) {
