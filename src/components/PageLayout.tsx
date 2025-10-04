@@ -1,7 +1,11 @@
+"use client";
+
 import * as React from "react";
 import { Header } from "@/components/Header";
 import { BottomNavigation } from "@/components/BottomNavigation";
 import { cn } from "@/lib/utils";
+import { useOnlineStatus } from "@/hooks/use-online-status"; // Import the new hook
+import { toast } from "sonner"; // Import toast for notifications
 
 interface PageLayoutProps {
   children: React.ReactNode;
@@ -9,6 +13,20 @@ interface PageLayoutProps {
 }
 
 const PageLayout: React.FC<PageLayoutProps> = ({ children, className }) => {
+  const isOnline = useOnlineStatus();
+  const [initialLoad, setInitialLoad] = React.useState(true);
+
+  React.useEffect(() => {
+    if (!initialLoad) { // Prevent toast on initial load
+      if (isOnline) {
+        toast.success("You are back online!", { id: "online-status", duration: 3000 });
+      } else {
+        toast.warning("You are currently offline. Some features may be limited.", { id: "online-status", duration: Infinity });
+      }
+    }
+    setInitialLoad(false);
+  }, [isOnline, initialLoad]);
+
   return (
     <div className="flex flex-col min-h-screen">
       <Header />
