@@ -1,447 +1,73 @@
 "use client";
 
 import React, { useState } from "react";
+import * as LucideIcons from "lucide-react";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Button } from "@/components/Button";
-import { Command, CommandInput, CommandEmpty, CommandGroup, CommandItem, CommandList } from "@/components/ui/command";
-import * as LucideIcons from "lucide-react";
+import { Input } from "@/components/Input";
+import { ScrollArea } from "@/components/ui/scroll-area";
 import { cn } from "@/lib/utils";
 
-// List of common icons to display in the picker
-const commonIcons = [
-  "Tag", "Home", "Wallet", "Repeat", "BarChart", "Settings", "PiggyBank",
-  "CreditCard", "Banknote", "Landmark", "TrendingUp", "HandCoins", "CircleDollarSign",
-  "ShoppingBag", "Utensils", "Car", "Book", "Heart", "Briefcase", "Gift",
-  "Coffee", "Plane", "Dumbbell", "GraduationCap", "Hospital", "Lightbulb",
-  "Gamepad", "Camera", "Music", "Film", "Zap", "Shield", "Cloud", "Sun", "Moon",
-  "Star", "Bell", "Mail", "Phone", "MessageSquare", "Calendar", "MapPin",
-  "Globe", "Laptop", "Monitor", "Printer", "HardDrive", "Mouse", "Keyboard",
-  "Headphones", "Speaker", "Mic", "Camera", "Video", "Image", "FileText",
-  "Folder", "Archive", "Trash", "Edit", "Plus", "Minus", "Check", "X", "Info",
-  "AlertTriangle", "HelpCircle", "Search", "Filter", "SortAsc", "SortDesc",
-  "User", "Users", "UserPlus", "UserMinus", "UserCheck", "UserX", "Key", "Lock",
-  "Unlock", "LogOut", "LogIn", "Settings", "Sliders", "Palette", "Paintbrush",
-  "Droplet", "Feather", "PenTool", "Scissors", "Crop", "Move", "ZoomIn", "ZoomOut",
-  "RotateCw", "RotateCcw", "RefreshCw", "Upload", "Download", "Share", "Link",
-  "ExternalLink", "Copy", "Clipboard", "Save", "SaveAll", "BookOpen", "Bookmark",
-  "Hash", "AtSign", "DollarSign", "Euro", "PoundSterling", "IndianRupee", "Yen",
-  "Bitcoin", "Wifi", "Bluetooth", "BatteryCharging", "BatteryFull", "BatteryLow",
-  "Signal", "Globe", "Map", "Compass", "Navigation", "Target", "Pin", "Anchor",
-  "Award", "Trophy", "Crown", "Diamond", "Gem", "Star", "Sparkles", "Zap", "Fire",
-  "Droplet", "CloudRain", "CloudSnow", "CloudSun", "CloudLightning", "Wind", "Sunrise",
-  "Sunset", "Thermometer", "Umbrella", "Watch", "Clock", "Timer", "AlarmClock",
-  "Hourglass", "Infinity", "Circle", "Square", "Triangle", "Hexagon", "Octagon",
-  "Star", "Heart", "Flower", "Leaf", "Tree", "Mountain", "Sun", "Moon", "Cloud",
-  "Snowflake", "Droplet", "Wind", "Zap", "Fire", "Gift", "Briefcase", "Book", "Camera",
-  "Coffee", "Dumbbell", "GraduationCap", "Hospital", "Lightbulb", "Gamepad", "Music",
-  "Film", "Plane", "Car", "Utensils", "ShoppingBag", "Tag", "Wallet", "Home", "Repeat",
-  "BarChart", "Settings", "PiggyBank", "CreditCard", "Banknote", "Landmark", "TrendingUp",
-  "HandCoins", "CircleDollarSign", "ReceiptText", "Building", "Bus", "Train", "Bike",
-  "Walk", "Run", "Carrot", "Apple", "Pizza", "Burger", "Beer", "Wine", "Martini",
-  "Cake", "Cookie", "IceCream", "Candy", "Popcorn", "Gift", "ShoppingBag", "ShoppingCart",
-  "Package", "Truck", "Ship", "Plane", "Rocket", "Satellite", "Globe", "Map", "Compass",
-  "Navigation", "Target", "Pin", "Anchor", "Award", "Trophy", "Crown", "Diamond", "Gem",
-  "Star", "Sparkles", "Zap", "Fire", "Droplet", "CloudRain", "CloudSnow", "CloudSun",
-  "CloudLightning", "Wind", "Sunrise", "Sunset", "Thermometer", "Umbrella", "Watch",
-  "Clock", "Timer", "AlarmClock", "Hourglass", "Infinity", "Circle", "Square", "Triangle",
-  "Hexagon", "Octagon", "Star", "Heart", "Flower", "Leaf", "Tree", "Mountain", "Sun",
-  "Moon", "Cloud", "Snowflake", "Droplet", "Wind", "Zap", "Fire", "Gift", "Briefcase",
-  "Book", "Camera", "Coffee", "Dumbbell", "GraduationCap", "Hospital", "Lightbulb",
-  "Gamepad", "Music", "Film", "Plane", "Car", "Utensils", "ShoppingBag", "Tag", "Wallet",
-  "Home", "Repeat", "BarChart", "Settings", "PiggyBank", "CreditCard", "Banknote",
-  "Landmark", "TrendingUp", "HandCoins", "CircleDollarSign", "ReceiptText", "Building",
-  "Bus", "Train", "Bike", "Walk", "Run", "Carrot", "Apple", "Pizza", "Burger", "Beer",
-  "Wine", "Martini", "Cake", "Cookie", "IceCream", "Candy", "Popcorn", "Gift",
-  "ShoppingBag", "ShoppingCart", "Package", "Truck", "Ship", "Plane", "Rocket",
-  "Satellite", "Globe", "Map", "Compass", "Navigation", "Target", "Pin", "Anchor",
-  "Award", "Trophy", "Crown", "Diamond", "Gem", "Star", "Sparkles", "Zap", "Fire",
-  "Droplet", "CloudRain", "CloudSnow", "CloudSun", "CloudLightning", "Wind", "Sunrise",
-  "Sunset", "Thermometer", "Umbrella", "Watch", "Clock", "Timer", "AlarmClock",
-  "Hourglass", "Infinity", "Circle", "Square", "Triangle", "Hexagon", "Octagon",
-  "Star", "Heart", "Flower", "Leaf", "Tree", "Mountain", "Sun", "Moon", "Cloud",
-  "Snowflake", "Droplet", "Wind", "Zap", "Fire", "Gift", "Briefcase", "Book", "Camera",
-  "Coffee", "Dumbbell", "GraduationCap", "Hospital", "Lightbulb", "Gamepad", "Music",
-  "Film", "Plane", "Car", "Utensils", "ShoppingBag", "Tag", "Wallet", "Home", "Repeat",
-  "BarChart", "Settings", "PiggyBank", "CreditCard", "Banknote", "Landmark", "TrendingUp",
-  "HandCoins", "CircleDollarSign", "ReceiptText", "Building", "Bus", "Train", "Bike",
-  "Walk", "Run", "Carrot", "Apple", "Pizza", "Burger", "Beer", "Wine", "Martini",
-  "Cake", "Cookie", "IceCream", "Candy", "Popcorn", "Gift", "ShoppingBag", "ShoppingCart",
-  "Package", "Truck", "Ship", "Plane", "Rocket", "Satellite", "Globe", "Map", "Compass",
-  "Navigation", "Target", "Pin", "Anchor", "Award", "Trophy", "Crown", "Diamond", "Gem",
-  "Star", "Sparkles", "Zap", "Fire", "Droplet", "CloudRain", "CloudSnow", "CloudSun",
-  "CloudLightning", "Wind", "Sunrise", "Sunset", "Thermometer", "Umbrella", "Watch",
-  "Clock", "Timer", "AlarmClock", "Hourglass", "Infinity", "Circle", "Square", "Triangle",
-  "Hexagon", "Octagon", "Star", "Heart", "Flower", "Leaf", "Tree", "Mountain", "Sun",
-  "Moon", "Cloud", "Snowflake", "Droplet", "Wind", "Zap", "Fire", "Gift", "Briefcase",
-  "Book", "Camera", "Coffee", "Dumbbell", "GraduationCap", "Hospital", "Lightbulb",
-  "Gamepad", "Music", "Film", "Plane", "Car", "Utensils", "ShoppingBag", "Tag", "Wallet",
-  "Home", "Repeat", "BarChart", "Settings", "PiggyBank", "CreditCard", "Banknote",
-  "Landmark", "TrendingUp", "HandCoins", "CircleDollarSign", "ReceiptText", "Building",
-  "Bus", "Train", "Bike", "Walk", "Run", "Carrot", "Apple", "Pizza", "Burger", "Beer",
-  "Wine", "Martini", "Cake", "Cookie", "IceCream", "Candy", "Popcorn", "Gift",
-  "ShoppingBag", "ShoppingCart", "Package", "Truck", "Ship", "Plane", "Rocket",
-  "Satellite", "Globe", "Map", "Compass", "Navigation", "Target", "Pin", "Anchor",
-  "Award", "Trophy", "Crown", "Diamond", "Gem", "Star", "Sparkles", "Zap", "Fire",
-  "Droplet", "CloudRain", "CloudSnow", "CloudSun", "CloudLightning", "Wind", "Sunrise",
-  "Sunset", "Thermometer", "Umbrella", "Watch", "Clock", "Timer", "AlarmClock",
-  "Hourglass", "Infinity", "Circle", "Square", "Triangle", "Hexagon", "Octagon",
-  "Star", "Heart", "Flower", "Leaf", "Tree", "Mountain", "Sun", "Moon", "Cloud",
-  "Snowflake", "Droplet", "Wind", "Zap", "Fire", "Gift", "Briefcase", "Book", "Camera",
-  "Coffee", "Dumbbell", "GraduationCap", "Hospital", "Lightbulb", "Gamepad", "Music",
-  "Film", "Plane", "Car", "Utensils", "ShoppingBag", "Tag", "Wallet", "Home", "Repeat",
-  "BarChart", "Settings", "PiggyBank", "CreditCard", "Banknote", "Landmark", "TrendingUp",
-  "HandCoins", "CircleDollarSign", "ReceiptText", "Building", "Bus", "Train", "Bike",
-  "Walk", "Run", "Carrot", "Apple", "Pizza", "Burger", "Beer", "Wine", "Martini",
-  "Cake", "Cookie", "IceCream", "Candy", "Popcorn", "Gift", "ShoppingBag", "ShoppingCart",
-  "Package", "Truck", "Ship", "Plane", "Rocket", "Satellite", "Globe", "Map", "Compass",
-  "Navigation", "Target", "Pin", "Anchor", "Award", "Trophy", "Crown", "Diamond", "Gem",
-  "Star", "Sparkles", "Zap", "Fire", "Droplet", "CloudRain", "CloudSnow", "CloudSun",
-  "CloudLightning", "Wind", "Sunrise", "Sunset", "Thermometer", "Umbrella", "Watch",
-  "Clock", "Timer", "AlarmClock", "Hourglass", "Infinity", "Circle", "Square", "Triangle",
-  "Hexagon", "Octagon", "Star", "Heart", "Flower", "Leaf", "Tree", "Mountain", "Sun",
-  "Moon", "Cloud", "Snowflake", "Droplet", "Wind", "Zap", "Fire", "Gift", "Briefcase",
-  "Book", "Camera", "Coffee", "Dumbbell", "GraduationCap", "Hospital", "Lightbulb",
-  "Gamepad", "Music", "Film", "Plane", "Car", "Utensils", "ShoppingBag", "Tag", "Wallet",
-  "Home", "Repeat", "BarChart", "Settings", "PiggyBank", "CreditCard", "Banknote",
-  "Landmark", "TrendingUp", "HandCoins", "CircleDollarSign", "ReceiptText", "Building",
-  "Bus", "Train", "Bike", "Walk", "Run", "Carrot", "Apple", "Pizza", "Burger", "Beer",
-  "Wine", "Martini", "Cake", "Cookie", "IceCream", "Candy", "Popcorn", "Gift",
-  "ShoppingBag", "ShoppingCart", "Package", "Truck", "Ship", "Plane", "Rocket",
-  "Satellite", "Globe", "Map", "Compass", "Navigation", "Target", "Pin", "Anchor",
-  "Award", "Trophy", "Crown", "Diamond", "Gem", "Star", "Sparkles", "Zap", "Fire",
-  "Droplet", "CloudRain", "CloudSnow", "CloudSun", "CloudLightning", "Wind", "Sunrise",
-  "Sunset", "Thermometer", "Umbrella", "Watch", "Clock", "Timer", "AlarmClock",
-  "Hourglass", "Infinity", "Circle", "Square", "Triangle", "Hexagon", "Octagon",
-  "Star", "Heart", "Flower", "Leaf", "Tree", "Mountain", "Sun", "Moon", "Cloud",
-  "Snowflake", "Droplet", "Wind", "Zap", "Fire", "Gift", "Briefcase", "Book", "Camera",
-  "Coffee", "Dumbbell", "GraduationCap", "Hospital", "Lightbulb", "Gamepad", "Music",
-  "Film", "Plane", "Car", "Utensils", "ShoppingBag", "Tag", "Wallet", "Home", "Repeat",
-  "BarChart", "Settings", "PiggyBank", "CreditCard", "Banknote", "Landmark", "TrendingUp",
-  "HandCoins", "CircleDollarSign", "ReceiptText", "Building", "Bus", "Train", "Bike",
-  "Walk", "Run", "Carrot", "Apple", "Pizza", "Burger", "Beer", "Wine", "Martini",
-  "Cake", "Cookie", "IceCream", "Candy", "Popcorn", "Gift", "ShoppingBag", "ShoppingCart",
-  "Package", "Truck", "Ship", "Plane", "Rocket", "Satellite", "Globe", "Map", "Compass",
-  "Navigation", "Target", "Pin", "Anchor", "Award", "Trophy", "Crown", "Diamond", "Gem",
-  "Star", "Sparkles", "Zap", "Fire", "Droplet", "CloudRain", "CloudSnow", "CloudSun",
-  "CloudLightning", "Wind", "Sunrise", "Sunset", "Thermometer", "Umbrella", "Watch",
-  "Clock", "Timer", "AlarmClock", "Hourglass", "Infinity", "Circle", "Square", "Triangle",
-  "Hexagon", "Octagon", "Star", "Heart", "Flower", "Leaf", "Tree", "Mountain", "Sun",
-  "Moon", "Cloud", "Snowflake", "Droplet", "Wind", "Zap", "Fire", "Gift", "Briefcase",
-  "Book", "Camera", "Coffee", "Dumbbell", "GraduationCap", "Hospital", "Lightbulb",
-  "Gamepad", "Music", "Film", "Plane", "Car", "Utensils", "ShoppingBag", "Tag", "Wallet",
-  "Home", "Repeat", "BarChart", "Settings", "PiggyBank", "CreditCard", "Banknote",
-  "Landmark", "TrendingUp", "HandCoins", "CircleDollarSign", "ReceiptText", "Building",
-  "Bus", "Train", "Bike", "Walk", "Run", "Carrot", "Apple", "Pizza", "Burger", "Beer",
-  "Wine", "Martini", "Cake", "Cookie", "IceCream", "Candy", "Popcorn", "Gift",
-  "ShoppingBag", "ShoppingCart", "Package", "Truck", "Ship", "Plane", "Rocket",
-  "Satellite", "Globe", "Map", "Compass", "Navigation", "Target", "Pin", "Anchor",
-  "Award", "Trophy", "Crown", "Diamond", "Gem", "Star", "Sparkles", "Zap", "Fire",
-  "Droplet", "CloudRain", "CloudSnow", "CloudSun", "CloudLightning", "Wind", "Sunrise",
-  "Sunset", "Thermometer", "Umbrella", "Watch", "Clock", "Timer", "AlarmClock",
-  "Hourglass", "Infinity", "Circle", "Square", "Triangle", "Hexagon", "Octagon",
-  "Star", "Heart", "Flower", "Leaf", "Tree", "Mountain", "Sun", "Moon", "Cloud",
-  "Snowflake", "Droplet", "Wind", "Zap", "Fire", "Gift", "Briefcase", "Book", "Camera",
-  "Coffee", "Dumbbell", "GraduationCap", "Hospital", "Lightbulb", "Gamepad", "Music",
-  "Film", "Plane", "Car", "Utensils", "ShoppingBag", "Tag", "Wallet", "Home", "Repeat",
-  "BarChart", "Settings", "PiggyBank", "CreditCard", "Banknote", "Landmark", "TrendingUp",
-  "HandCoins", "CircleDollarSign", "ReceiptText", "Building", "Bus", "Train", "Bike",
-  "Walk", "Run", "Carrot", "Apple", "Pizza", "Burger", "Beer", "Wine", "Martini",
-  "Cake", "Cookie", "IceCream", "Candy", "Popcorn", "Gift", "ShoppingBag", "ShoppingCart",
-  "Package", "Truck", "Ship", "Plane", "Rocket", "Satellite", "Globe", "Map", "Compass",
-  "Navigation", "Target", "Pin", "Anchor", "Award", "Trophy", "Crown", "Diamond", "Gem",
-  "Star", "Sparkles", "Zap", "Fire", "Droplet", "CloudRain", "CloudSnow", "CloudSun",
-  "CloudLightning", "Wind", "Sunrise", "Sunset", "Thermometer", "Umbrella", "Watch",
-  "Clock", "Timer", "AlarmClock", "Hourglass", "Infinity", "Circle", "Square", "Triangle",
-  "Hexagon", "Octagon", "Star", "Heart", "Flower", "Leaf", "Tree", "Mountain", "Sun",
-  "Moon", "Cloud", "Snowflake", "Droplet", "Wind", "Zap", "Fire", "Gift", "Briefcase",
-  "Book", "Camera", "Coffee", "Dumbbell", "GraduationCap", "Hospital", "Lightbulb",
-  "Gamepad", "Music", "Film", "Plane", "Car", "Utensils", "ShoppingBag", "Tag", "Wallet",
-  "Home", "Repeat", "BarChart", "Settings", "PiggyBank", "CreditCard", "Banknote",
-  "Landmark", "TrendingUp", "HandCoins", "CircleDollarSign", "ReceiptText", "Building",
-  "Bus", "Train", "Bike", "Walk", "Run", "Carrot", "Apple", "Pizza", "Burger", "Beer",
-  "Wine", "Martini", "Cake", "Cookie", "IceCream", "Candy", "Popcorn", "Gift",
-  "ShoppingBag", "ShoppingCart", "Package", "Truck", "Ship", "Plane", "Rocket",
-  "Satellite", "Globe", "Map", "Compass", "Navigation", "Target", "Pin", "Anchor",
-  "Award", "Trophy", "Crown", "Diamond", "Gem", "Star", "Sparkles", "Zap", "Fire",
-  "Droplet", "CloudRain", "CloudSnow", "CloudSun", "CloudLightning", "Wind", "Sunrise",
-  "Sunset", "Thermometer", "Umbrella", "Watch", "Clock", "Timer", "AlarmClock",
-  "Hourglass", "Infinity", "Circle", "Square", "Triangle", "Hexagon", "Octagon",
-  "Star", "Heart", "Flower", "Leaf", "Tree", "Mountain", "Sun", "Moon", "Cloud",
-  "Snowflake", "Droplet", "Wind", "Zap", "Fire", "Gift", "Briefcase", "Book", "Camera",
-  "Coffee", "Dumbbell", "GraduationCap", "Hospital", "Lightbulb", "Gamepad", "Music",
-  "Film", "Plane", "Car", "Utensils", "ShoppingBag", "Tag", "Wallet", "Home", "Repeat",
-  "BarChart", "Settings", "PiggyBank", "CreditCard", "Banknote", "Landmark", "TrendingUp",
-  "HandCoins", "CircleDollarSign", "ReceiptText", "Building", "Bus", "Train", "Bike",
-  "Walk", "Run", "Carrot", "Apple", "Pizza", "Burger", "Beer", "Wine", "Martini",
-  "Cake", "Cookie", "IceCream", "Candy", "Popcorn", "Gift", "ShoppingBag", "ShoppingCart",
-  "Package", "Truck", "Ship", "Plane", "Rocket", "Satellite", "Globe", "Map", "Compass",
-  "Navigation", "Target", "Pin", "Anchor", "Award", "Trophy", "Crown", "Diamond", "Gem",
-  "Star", "Sparkles", "Zap", "Fire", "Droplet", "CloudRain", "CloudSnow", "CloudSun",
-  "CloudLightning", "Wind", "Sunrise", "Sunset", "Thermometer", "Umbrella", "Watch",
-  "Clock", "Timer", "AlarmClock", "Hourglass", "Infinity", "Circle", "Square", "Triangle",
-  "Hexagon", "Octagon", "Star", "Heart", "Flower", "Leaf", "Tree", "Mountain", "Sun",
-  "Moon", "Cloud", "Snowflake", "Droplet", "Wind", "Zap", "Fire", "Gift", "Briefcase",
-  "Book", "Camera", "Coffee", "Dumbbell", "GraduationCap", "Hospital", "Lightbulb",
-  "Gamepad", "Music", "Film", "Plane", "Car", "Utensils", "ShoppingBag", "Tag", "Wallet",
-  "Home", "Repeat", "BarChart", "Settings", "PiggyBank", "CreditCard", "Banknote",
-  "Landmark", "TrendingUp", "HandCoins", "CircleDollarSign", "ReceiptText", "Building",
-  "Bus", "Train", "Bike", "Walk", "Run", "Carrot", "Apple", "Pizza", "Burger", "Beer",
-  "Wine", "Martini", "Cake", "Cookie", "IceCream", "Candy", "Popcorn", "Gift",
-  "ShoppingBag", "ShoppingCart", "Package", "Truck", "Ship", "Plane", "Rocket",
-  "Satellite", "Globe", "Map", "Compass", "Navigation", "Target", "Pin", "Anchor",
-  "Award", "Trophy", "Crown", "Diamond", "Gem", "Star", "Sparkles", "Zap", "Fire",
-  "Droplet", "CloudRain", "CloudSnow", "CloudSun", "CloudLightning", "Wind", "Sunrise",
-  "Sunset", "Thermometer", "Umbrella", "Watch", "Clock", "Timer", "AlarmClock",
-  "Hourglass", "Infinity", "Circle", "Square", "Triangle", "Hexagon", "Octagon",
-  "Star", "Heart", "Flower", "Leaf", "Tree", "Mountain", "Sun", "Moon", "Cloud",
-  "Snowflake", "Droplet", "Wind", "Zap", "Fire", "Gift", "Briefcase", "Book", "Camera",
-  "Coffee", "Dumbbell", "GraduationCap", "Hospital", "Lightbulb", "Gamepad", "Music",
-  "Film", "Plane", "Car", "Utensils", "ShoppingBag", "Tag", "Wallet", "Home", "Repeat",
-  "BarChart", "Settings", "PiggyBank", "CreditCard", "Banknote", "Landmark", "TrendingUp",
-  "HandCoins", "CircleDollarSign", "ReceiptText", "Building", "Bus", "Train", "Bike",
-  "Walk", "Run", "Carrot", "Apple", "Pizza", "Burger", "Beer", "Wine", "Martini",
-  "Cake", "Cookie", "IceCream", "Candy", "Popcorn", "Gift", "ShoppingBag", "ShoppingCart",
-  "Package", "Truck", "Ship", "Plane", "Rocket", "Satellite", "Globe", "Map", "Compass",
-  "Navigation", "Target", "Pin", "Anchor", "Award", "Trophy", "Crown", "Diamond", "Gem",
-  "Star", "Sparkles", "Zap", "Fire", "Droplet", "CloudRain", "CloudSnow", "CloudSun",
-  "CloudLightning", "Wind", "Sunrise", "Sunset", "Thermometer", "Umbrella", "Watch",
-  "Clock", "Timer", "AlarmClock", "Hourglass", "Infinity", "Circle", "Square", "Triangle",
-  "Hexagon", "Octagon", "Star", "Heart", "Flower", "Leaf", "Tree", "Mountain", "Sun",
-  "Moon", "Cloud", "Snowflake", "Droplet", "Wind", "Zap", "Fire", "Gift", "Briefcase",
-  "Book", "Camera", "Coffee", "Dumbbell", "GraduationCap", "Hospital", "Lightbulb",
-  "Gamepad", "Music", "Film", "Plane", "Car", "Utensils", "ShoppingBag", "Tag", "Wallet",
-  "Home", "Repeat", "BarChart", "Settings", "PiggyBank", "CreditCard", "Banknote",
-  "Landmark", "TrendingUp", "HandCoins", "CircleDollarSign", "ReceiptText", "Building",
-  "Bus", "Train", "Bike", "Walk", "Run", "Carrot", "Apple", "Pizza", "Burger", "Beer",
-  "Wine", "Martini", "Cake", "Cookie", "IceCream", "Candy", "Popcorn", "Gift",
-  "ShoppingBag", "ShoppingCart", "Package", "Truck", "Ship", "Plane", "Rocket",
-  "Satellite", "Globe", "Map", "Compass", "Navigation", "Target", "Pin", "Anchor",
-  "Award", "Trophy", "Crown", "Diamond", "Gem", "Star", "Sparkles", "Zap", "Fire",
-  "Droplet", "CloudRain", "CloudSnow", "CloudSun", "CloudLightning", "Wind", "Sunrise",
-  "Sunset", "Thermometer", "Umbrella", "Watch", "Clock", "Timer", "AlarmClock",
-  "Hourglass", "Infinity", "Circle", "Square", "Triangle", "Hexagon", "Octagon",
-  "Star", "Heart", "Flower", "Leaf", "Tree", "Mountain", "Sun", "Moon", "Cloud",
-  "Snowflake", "Droplet", "Wind", "Zap", "Fire", "Gift", "Briefcase", "Book", "Camera",
-  "Coffee", "Dumbbell", "GraduationCap", "Hospital", "Lightbulb", "Gamepad", "Music",
-  "Film", "Plane", "Car", "Utensils", "ShoppingBag", "Tag", "Wallet", "Home", "Repeat",
-  "BarChart", "Settings", "PiggyBank", "CreditCard", "Banknote", "Landmark", "TrendingUp",
-  "HandCoins", "CircleDollarSign", "ReceiptText", "Building", "Bus", "Train", "Bike",
-  "Walk", "Run", "Carrot", "Apple", "Pizza", "Burger", "Beer", "Wine", "Martini",
-  "Cake", "Cookie", "IceCream", "Candy", "Popcorn", "Gift", "ShoppingBag", "ShoppingCart",
-  "Package", "Truck", "Ship", "Plane", "Rocket", "Satellite", "Globe", "Map", "Compass",
-  "Navigation", "Target", "Pin", "Anchor", "Award", "Trophy", "Crown", "Diamond", "Gem",
-  "Star", "Sparkles", "Zap", "Fire", "Droplet", "CloudRain", "CloudSnow", "CloudSun",
-  "CloudLightning", "Wind", "Sunrise", "Sunset", "Thermometer", "Umbrella", "Watch",
-  "Clock", "Timer", "AlarmClock", "Hourglass", "Infinity", "Circle", "Square", "Triangle",
-  "Hexagon", "Octagon", "Star", "Heart", "Flower", "Leaf", "Tree", "Mountain", "Sun",
-  "Moon", "Cloud", "Snowflake", "Droplet", "Wind", "Zap", "Fire", "Gift", "Briefcase",
-  "Book", "Camera", "Coffee", "Dumbbell", "GraduationCap", "Hospital", "Lightbulb",
-  "Gamepad", "Music", "Film", "Plane", "Car", "Utensils", "ShoppingBag", "Tag", "Wallet",
-  "Home", "Repeat", "BarChart", "Settings", "PiggyBank", "CreditCard", "Banknote",
-  "Landmark", "TrendingUp", "HandCoins", "CircleDollarSign", "ReceiptText", "Building",
-  "Bus", "Train", "Bike", "Walk", "Run", "Carrot", "Apple", "Pizza", "Burger", "Beer",
-  "Wine", "Martini", "Cake", "Cookie", "IceCream", "Candy", "Popcorn", "Gift",
-  "ShoppingBag", "ShoppingCart", "Package", "Truck", "Ship", "Plane", "Rocket",
-  "Satellite", "Globe", "Map", "Compass", "Navigation", "Target", "Pin", "Anchor",
-  "Award", "Trophy", "Crown", "Diamond", "Gem", "Star", "Sparkles", "Zap", "Fire",
-  "Droplet", "CloudRain", "CloudSnow", "CloudSun", "CloudLightning", "Wind", "Sunrise",
-  "Sunset", "Thermometer", "Umbrella", "Watch", "Clock", "Timer", "AlarmClock",
-  "Hourglass", "Infinity", "Circle", "Square", "Triangle", "Hexagon", "Octagon",
-  "Star", "Heart", "Flower", "Leaf", "Tree", "Mountain", "Sun", "Moon", "Cloud",
-  "Snowflake", "Droplet", "Wind", "Zap", "Fire", "Gift", "Briefcase", "Book", "Camera",
-  "Coffee", "Dumbbell", "GraduationCap", "Hospital", "Lightbulb", "Gamepad", "Music",
-  "Film", "Plane", "Car", "Utensils", "ShoppingBag", "Tag", "Wallet", "Home", "Repeat",
-  "BarChart", "Settings", "PiggyBank", "CreditCard", "Banknote", "Landmark", "TrendingUp",
-  "HandCoins", "CircleDollarSign", "ReceiptText", "Building", "Bus", "Train", "Bike",
-  "Walk", "Run", "Carrot", "Apple", "Pizza", "Burger", "Beer", "Wine", "Martini",
-  "Cake", "Cookie", "IceCream", "Candy", "Popcorn", "Gift", "ShoppingBag", "ShoppingCart",
-  "Package", "Truck", "Ship", "Plane", "Rocket", "Satellite", "Globe", "Map", "Compass",
-  "Navigation", "Target", "Pin", "Anchor", "Award", "Trophy", "Crown", "Diamond", "Gem",
-  "Star", "Sparkles", "Zap", "Fire", "Droplet", "CloudRain", "CloudSnow", "CloudSun",
-  "CloudLightning", "Wind", "Sunrise", "Sunset", "Thermometer", "Umbrella", "Watch",
-  "Clock", "Timer", "AlarmClock", "Hourglass", "Infinity", "Circle", "Square", "Triangle",
-  "Hexagon", "Octagon", "Star", "Heart", "Flower", "Leaf", "Tree", "Mountain", "Sun",
-  "Moon", "Cloud", "Snowflake", "Droplet", "Wind", "Zap", "Fire", "Gift", "Briefcase",
-  "Book", "Camera", "Coffee", "Dumbbell", "GraduationCap", "Hospital", "Lightbulb",
-  "Gamepad", "Music", "Film", "Plane", "Car", "Utensils", "ShoppingBag", "Tag", "Wallet",
-  "Home", "Repeat", "BarChart", "Settings", "PiggyBank", "CreditCard", "Banknote",
-  "Landmark", "TrendingUp", "HandCoins", "CircleDollarSign", "ReceiptText", "Building",
-  "Bus", "Train", "Bike", "Walk", "Run", "Carrot", "Apple", "Pizza", "Burger", "Beer",
-  "Wine", "Martini", "Cake", "Cookie", "IceCream", "Candy", "Popcorn", "Gift",
-  "ShoppingBag", "ShoppingCart", "Package", "Truck", "Ship", "Plane", "Rocket",
-  "Satellite", "Globe", "Map", "Compass", "Navigation", "Target", "Pin", "Anchor",
-  "Award", "Trophy", "Crown", "Diamond", "Gem", "Star", "Sparkles", "Zap", "Fire",
-  "Droplet", "CloudRain", "CloudSnow", "CloudSun", "CloudLightning", "Wind", "Sunrise",
-  "Sunset", "Thermometer", "Umbrella", "Watch", "Clock", "Timer", "AlarmClock",
-  "Hourglass", "Infinity", "Circle", "Square", "Triangle", "Hexagon", "Octagon",
-  "Star", "Heart", "Flower", "Leaf", "Tree", "Mountain", "Sun", "Moon", "Cloud",
-  "Snowflake", "Droplet", "Wind", "Zap", "Fire", "Gift", "Briefcase", "Book", "Camera",
-  "Coffee", "Dumbbell", "GraduationCap", "Hospital", "Lightbulb", "Gamepad", "Music",
-  "Film", "Plane", "Car", "Utensils", "ShoppingBag", "Tag", "Wallet", "Home", "Repeat",
-  "BarChart", "Settings", "PiggyBank", "CreditCard", "Banknote", "Landmark", "TrendingUp",
-  "HandCoins", "CircleDollarSign", "ReceiptText", "Building", "Bus", "Train", "Bike",
-  "Walk", "Run", "Carrot", "Apple", "Pizza", "Burger", "Beer", "Wine", "Martini",
-  "Cake", "Cookie", "IceCream", "Candy", "Popcorn", "Gift", "ShoppingBag", "ShoppingCart",
-  "Package", "Truck", "Ship", "Plane", "Rocket", "Satellite", "Globe", "Map", "Compass",
-  "Navigation", "Target", "Pin", "Anchor", "Award", "Trophy", "Crown", "Diamond", "Gem",
-  "Star", "Sparkles", "Zap", "Fire", "Droplet", "CloudRain", "CloudSnow", "CloudSun",
-  "CloudLightning", "Wind", "Sunrise", "Sunset", "Thermometer", "Umbrella", "Watch",
-  "Clock", "Timer", "AlarmClock", "Hourglass", "Infinity", "Circle", "Square", "Triangle",
-  "Hexagon", "Octagon", "Star", "Heart", "Flower", "Leaf", "Tree", "Mountain", "Sun",
-  "Moon", "Cloud", "Snowflake", "Droplet", "Wind", "Zap", "Fire", "Gift", "Briefcase",
-  "Book", "Camera", "Coffee", "Dumbbell", "GraduationCap", "Hospital", "Lightbulb",
-  "Gamepad", "Music", "Film", "Plane", "Car", "Utensils", "ShoppingBag", "Tag", "Wallet",
-  "Home", "Repeat", "BarChart", "Settings", "PiggyBank", "CreditCard", "Banknote",
-  "Landmark", "TrendingUp", "HandCoins", "CircleDollarSign", "ReceiptText", "Building",
-  "Bus", "Train", "Bike", "Walk", "Run", "Carrot", "Apple", "Pizza", "Burger", "Beer",
-  "Wine", "Martini", "Cake", "Cookie", "IceCream", "Candy", "Popcorn", "Gift",
-  "ShoppingBag", "ShoppingCart", "Package", "Truck", "Ship", "Plane", "Rocket",
-  "Satellite", "Globe", "Map", "Compass", "Navigation", "Target", "Pin", "Anchor",
-  "Award", "Trophy", "Crown", "Diamond", "Gem", "Star", "Sparkles", "Zap", "Fire",
-  "Droplet", "CloudRain", "CloudSnow", "CloudSun", "CloudLightning", "Wind", "Sunrise",
-  "Sunset", "Thermometer", "Umbrella", "Watch", "Clock", "Timer", "AlarmClock",
-  "Hourglass", "Infinity", "Circle", "Square", "Triangle", "Hexagon", "Octagon",
-  "Star", "Heart", "Flower", "Leaf", "Tree", "Mountain", "Sun", "Moon", "Cloud",
-  "Snowflake", "Droplet", "Wind", "Zap", "Fire", "Gift", "Briefcase", "Book", "Camera",
-  "Coffee", "Dumbbell", "GraduationCap", "Hospital", "Lightbulb", "Gamepad", "Music",
-  "Film", "Plane", "Car", "Utensils", "ShoppingBag", "Tag", "Wallet", "Home", "Repeat",
-  "BarChart", "Settings", "PiggyBank", "CreditCard", "Banknote", "Landmark", "TrendingUp",
-  "HandCoins", "CircleDollarSign", "ReceiptText", "Building", "Bus", "Train", "Bike",
-  "Walk", "Run", "Carrot", "Apple", "Pizza", "Burger", "Beer", "Wine", "Martini",
-  "Cake", "Cookie", "IceCream", "Candy", "Popcorn", "Gift", "ShoppingBag", "ShoppingCart",
-  "Package", "Truck", "Ship", "Plane", "Rocket", "Satellite", "Globe", "Map", "Compass",
-  "Navigation", "Target", "Pin", "Anchor", "Award", "Trophy", "Crown", "Diamond", "Gem",
-  "Star", "Sparkles", "Zap", "Fire", "Droplet", "CloudRain", "CloudSnow", "CloudSun",
-  "CloudLightning", "Wind", "Sunrise", "Sunset", "Thermometer", "Umbrella", "Watch",
-  "Clock", "Timer", "AlarmClock", "Hourglass", "Infinity", "Circle", "Square", "Triangle",
-  "Hexagon", "Octagon", "Star", "Heart", "Flower", "Leaf", "Tree", "Mountain", "Sun",
-  "Moon", "Cloud", "Snowflake", "Droplet", "Wind", "Zap", "Fire", "Gift", "Briefcase",
-  "Book", "Camera", "Coffee", "Dumbbell", "GraduationCap", "Hospital", "Lightbulb",
-  "Gamepad", "Music", "Film", "Plane", "Car", "Utensils", "ShoppingBag", "Tag", "Wallet",
-  "Home", "Repeat", "BarChart", "Settings", "PiggyBank", "CreditCard", "Banknote",
-  "Landmark", "TrendingUp", "HandCoins", "CircleDollarSign", "ReceiptText", "Building",
-  "Bus", "Train", "Bike", "Walk", "Run", "Carrot", "Apple", "Pizza", "Burger", "Beer",
-  "Wine", "Martini", "Cake", "Cookie", "IceCream", "Candy", "Popcorn", "Gift",
-  "ShoppingBag", "ShoppingCart", "Package", "Truck", "Ship", "Plane", "Rocket",
-  "Satellite", "Globe", "Map", "Compass", "Navigation", "Target", "Pin", "Anchor",
-  "Award", "Trophy", "Crown", "Diamond", "Gem", "Star", "Sparkles", "Zap", "Fire",
-  "Droplet", "CloudRain", "CloudSnow", "CloudSun", "CloudLightning", "Wind", "Sunrise",
-  "Sunset", "Thermometer", "Umbrella", "Watch", "Clock", "Timer", "AlarmClock",
-  "Hourglass", "Infinity", "Circle", "Square", "Triangle", "Hexagon", "Octagon",
-  "Star", "Heart", "Flower", "Leaf", "Tree", "Mountain", "Sun", "Moon", "Cloud",
-  "Snowflake", "Droplet", "Wind", "Zap", "Fire", "Gift", "Briefcase", "Book", "Camera",
-  "Coffee", "Dumbbell", "GraduationCap", "Hospital", "Lightbulb", "Gamepad", "Music",
-  "Film", "Plane", "Car", "Utensils", "ShoppingBag", "Tag", "Wallet", "Home", "Repeat",
-  "BarChart", "Settings", "PiggyBank", "CreditCard", "Banknote", "Landmark", "TrendingUp",
-  "HandCoins", "CircleDollarSign", "ReceiptText", "Building", "Bus", "Train", "Bike",
-  "Walk", "Run", "Carrot", "Apple", "Pizza", "Burger", "Beer", "Wine", "Martini",
-  "Cake", "Cookie", "IceCream", "Candy", "Popcorn", "Gift", "ShoppingBag", "ShoppingCart",
-  "Package", "Truck", "Ship", "Plane", "Rocket", "Satellite", "Globe", "Map", "Compass",
-  "Navigation", "Target", "Pin", "Anchor", "Award", "Trophy", "Crown", "Diamond", "Gem",
-  "Star", "Sparkles", "Zap", "Fire", "Droplet", "CloudRain", "CloudSnow", "CloudSun",
-  "CloudLightning", "Wind", "Sunrise", "Sunset", "Thermometer", "Umbrella", "Watch",
-  "Clock", "Timer", "AlarmClock", "Hourglass", "Infinity", "Circle", "Square", "Triangle",
-  "Hexagon", "Octagon", "Star", "Heart", "Flower", "Leaf", "Tree", "Mountain", "Sun",
-  "Moon", "Cloud", "Snowflake", "Droplet", "Wind", "Zap", "Fire", "Gift", "Briefcase",
-  "Book", "Camera", "Coffee", "Dumbbell", "GraduationCap", "Hospital", "Lightbulb",
-  "Gamepad", "Music", "Film", "Plane", "Car", "Utensils", "ShoppingBag", "Tag", "Wallet",
-  "Home", "Repeat", "BarChart", "Settings", "PiggyBank", "CreditCard", "Banknote",
-  "Landmark", "TrendingUp", "HandCoins", "CircleDollarSign", "ReceiptText", "Building",
-  "Bus", "Train", "Bike", "Walk", "Run", "Carrot", "Apple", "Pizza", "Burger", "Beer",
-  "Wine", "Martini", "Cake", "Cookie", "IceCream", "Candy", "Popcorn", "Gift",
-  "ShoppingBag", "ShoppingCart", "Package", "Truck", "Ship", "Plane", "Rocket",
-  "Satellite", "Globe", "Map", "Compass", "Navigation", "Target", "Pin", "Anchor",
-  "Award", "Trophy", "Crown", "Diamond", "Gem", "Star", "Sparkles", "Zap", "Fire",
-  "Droplet", "CloudRain", "CloudSnow", "CloudSun", "CloudLightning", "Wind", "Sunrise",
-  "Sunset", "Thermometer", "Umbrella", "Watch", "Clock", "Timer", "AlarmClock",
-  "Hourglass", "Infinity", "Circle", "Square", "Triangle", "Hexagon", "Octagon",
-  "Star", "Heart", "Flower", "Leaf", "Tree", "Mountain", "Sun", "Moon", "Cloud",
-  "Snowflake", "Droplet", "Wind", "Zap", "Fire", "Gift", "Briefcase", "Book", "Camera",
-  "Coffee", "Dumbbell", "GraduationCap", "Hospital", "Lightbulb", "Gamepad", "Music",
-  "Film", "Plane", "Car", "Utensils", "ShoppingBag", "Tag", "Wallet", "Home", "Repeat",
-  "BarChart", "Settings", "PiggyBank", "CreditCard", "Banknote", "Landmark", "TrendingUp",
-  "HandCoins", "CircleDollarSign", "ReceiptText", "Building", "Bus", "Train", "Bike",
-  "Walk", "Run", "Carrot", "Apple", "Pizza", "Burger", "Beer", "Wine", "Martini",
-  "Cake", "Cookie", "IceCream", "Candy", "Popcorn", "Gift", "ShoppingBag", "ShoppingCart",
-  "Package", "Truck", "Ship", "Plane", "Rocket", "Satellite", "Globe", "Map", "Compass",
-  "Navigation", "Target", "Pin", "Anchor", "Award", "Trophy", "Crown", "Diamond", "Gem",
-  "Star", "Sparkles", "Zap", "Fire", "Droplet", "CloudRain", "CloudSnow", "CloudSun",
-  "CloudLightning", "Wind", "Sunrise", "Sunset", "Thermometer", "Umbrella", "Watch",
-  "Clock", "Timer", "AlarmClock",
-];
+// Define the type for Lucide icons
+type LucideIconName = keyof typeof LucideIcons;
 
 interface IconPickerProps {
-  children: React.ReactNode;
   currentIcon: string;
   onSelectIcon: (iconName: string) => void;
+  children: React.ReactNode;
 }
 
-const IconPicker: React.FC<IconPickerProps> = ({ children, currentIcon, onSelectIcon }) => {
-  const [open, setOpen] = useState(false);
-  const [search, setSearch] = useState("");
+const IconPicker: React.FC<IconPickerProps> = ({ currentIcon, onSelectIcon, children }) => {
+  const [isOpen, setIsOpen] = useState(false);
+  const [searchTerm, setSearchTerm] = useState("");
 
   const allLucideIcons = Object.keys(LucideIcons).filter(
     (name) => typeof (LucideIcons as any)[name] === 'function'
-  );
+  ) as LucideIconName[];
 
-  const filteredIcons = allLucideIcons.filter(iconName =>
-    iconName.toLowerCase().includes(search.toLowerCase())
+  const filteredIcons = allLucideIcons.filter((iconName) =>
+    iconName.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
   const handleSelect = (iconName: string) => {
     onSelectIcon(iconName);
-    setOpen(false);
-    setSearch(""); // Clear search after selection
+    setIsOpen(false);
   };
 
   return (
-    <Popover open={open} onOpenChange={setOpen}>
+    <Popover open={isOpen} onOpenChange={setIsOpen}>
       <PopoverTrigger asChild>{children}</PopoverTrigger>
-      <PopoverContent className="w-[300px] p-0">
-        <Command>
-          <CommandInput
+      <PopoverContent className="w-80 p-0" align="start">
+        <div className="p-2">
+          <Input
             placeholder="Search icons..."
-            value={search}
-            onValueChange={setSearch}
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            className="mb-2"
           />
-          <CommandList>
-            <CommandEmpty>No icons found.</CommandEmpty>
-            <CommandGroup heading="Common Icons">
-              {commonIcons.filter(iconName => iconName.toLowerCase().includes(search.toLowerCase())).map((iconName) => {
-                const IconComponent = (LucideIcons as any)[iconName];
-                return (
-                  <CommandItem
-                    key={iconName}
-                    value={iconName}
-                    onSelect={() => handleSelect(iconName)}
-                    className="flex items-center gap-2"
-                  >
-                    <IconComponent className="h-4 w-4" />
-                    <span>{iconName}</span>
-                  </CommandItem>
-                );
-              })}
-            </CommandGroup>
-            {search && filteredIcons.length > 0 && (
-              <CommandGroup heading="Search Results">
-                {filteredIcons.map((iconName) => {
-                  const IconComponent = (LucideIcons as any)[iconName];
-                  return (
-                    <CommandItem
-                      key={iconName}
-                      value={iconName}
-                      onSelect={() => handleSelect(iconName)}
-                      className="flex items-center gap-2"
-                    >
-                      <IconComponent className="h-4 w-4" />
-                      <span>{iconName}</span>
-                    </CommandItem>
-                  );
-                })}
-              </CommandGroup>
-            )}
-          </CommandList>
-        </Command>
+        </div>
+        <ScrollArea className="h-64">
+          <div className="grid grid-cols-4 gap-2 p-2">
+            {filteredIcons.map((iconName) => {
+              const IconComponent = (LucideIcons as any)[iconName];
+              return (
+                <Button
+                  key={iconName}
+                  variant={currentIcon === iconName ? "secondary" : "ghost"}
+                  size="icon"
+                  onClick={() => handleSelect(iconName)}
+                  className={cn(
+                    "flex flex-col h-auto w-auto p-2",
+                    currentIcon === iconName && "bg-accent text-accent-foreground"
+                  )}
+                >
+                  <IconComponent className="h-5 w-5" />
+                  <span className="text-xs mt-1 truncate w-full">{iconName}</span>
+                </Button>
+              );
+            })}
+          </div>
+        </ScrollArea>
       </PopoverContent>
     </Popover>
   );
