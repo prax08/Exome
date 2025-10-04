@@ -23,7 +23,7 @@ interface MonthlyTrendChartProps {
   data: MonthlyTrendData[];
 }
 
-const MonthlyTrendChart: React.FC<MonthlyTrendChartProps> = ({ data }) => {
+const MonthlyTrendChart: React.FC<MonthlyTrendChartProps> = React.memo(({ data }) => {
   return (
     <ResponsiveContainer width="100%" height={300}>
       <LineChart
@@ -71,6 +71,7 @@ const MonthlyTrendChart: React.FC<MonthlyTrendChartProps> = ({ data }) => {
       </LineChart>
     </ResponsiveContainer>
   );
-};
+});
+MonthlyTrendChart.displayName = "MonthlyTrendChart";
 
 export { MonthlyTrendChart };

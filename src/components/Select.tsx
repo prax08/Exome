@@ -27,7 +27,7 @@ interface SelectProps extends React.ComponentPropsWithoutRef<typeof ShadcnSelect
   value?: string;
 }
 
-const Select: React.FC<SelectProps> = ({
+const Select: React.FC<SelectProps> = React.memo(({
   options,
   placeholder,
   label,
@@ -55,6 +55,7 @@ const Select: React.FC<SelectProps> = ({
       </SelectContent>
     </ShadcnSelect>
   );
-};
+});
+Select.displayName = "Select";
 
 export { Select };

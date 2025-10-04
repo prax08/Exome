@@ -7,7 +7,7 @@ export interface InputProps
   error?: boolean;
 }
 
-const Input = React.forwardRef<HTMLInputElement, InputProps>(
+const Input = React.memo(React.forwardRef<HTMLInputElement, InputProps>(
   ({ className, type, error, ...props }, ref) => {
     return (
       <input
@@ -22,7 +22,7 @@ const Input = React.forwardRef<HTMLInputElement, InputProps>(
       />
     );
   },
-);
+));
 Input.displayName = "Input";
 
 export { Input };

@@ -21,7 +21,7 @@ interface DatePickerProps {
   disabled?: boolean | ((date: Date) => boolean); // Updated to accept a function
 }
 
-const DatePicker: React.FC<DatePickerProps> = ({
+const DatePicker: React.FC<DatePickerProps> = React.memo(({
   date,
   onSelect,
   placeholder = "Pick a date",
@@ -55,6 +55,7 @@ const DatePicker: React.FC<DatePickerProps> = ({
       </PopoverContent>
     </Popover>
   );
-};
+});
+DatePicker.displayName = "DatePicker";
 
 export { DatePicker };

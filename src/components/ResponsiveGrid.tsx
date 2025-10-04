@@ -14,7 +14,7 @@ interface ResponsiveGridProps extends React.HTMLAttributes<HTMLDivElement> {
   gap?: number;
 }
 
-const ResponsiveGrid: React.FC<ResponsiveGridProps> = ({
+const ResponsiveGrid: React.FC<ResponsiveGridProps> = React.memo(({
   children,
   cols = { default: 1, sm: 2, md: 3, lg: 4 },
   gap = 6,
@@ -38,6 +38,7 @@ const ResponsiveGrid: React.FC<ResponsiveGridProps> = ({
       {children}
     </div>
   );
-};
+});
+ResponsiveGrid.displayName = "ResponsiveGrid";
 
 export { ResponsiveGrid };

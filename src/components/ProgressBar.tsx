@@ -8,7 +8,7 @@ interface ProgressBarProps extends React.ComponentPropsWithoutRef<typeof Progres
   indicatorClassName?: string;
 }
 
-const ProgressBar = React.forwardRef<
+const ProgressBar = React.memo(React.forwardRef<
   React.ElementRef<typeof ProgressPrimitive.Root>,
   ProgressBarProps
 >(({ className, value, indicatorClassName, ...props }, ref) => (
@@ -25,7 +25,7 @@ const ProgressBar = React.forwardRef<
       style={{ transform: `translateX(-${100 - (value || 0)}%)` }}
     />
   </ProgressPrimitive.Root>
-));
+)));
 ProgressBar.displayName = ProgressPrimitive.Root.displayName;
 
 export { ProgressBar };

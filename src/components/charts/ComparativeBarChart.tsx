@@ -32,7 +32,7 @@ interface ComparativeBarChartProps {
   color2?: string;
 }
 
-const ComparativeBarChart: React.FC<ComparativeBarChartProps> = ({
+const ComparativeBarChart: React.FC<ComparativeBarChartProps> = React.memo(({
   data,
   dataKey1,
   dataKey2,
@@ -73,6 +73,7 @@ const ComparativeBarChart: React.FC<ComparativeBarChartProps> = ({
       </BarChart>
     </ResponsiveContainer>
   );
-};
+});
+ComparativeBarChart.displayName = "ComparativeBarChart";
 
 export { ComparativeBarChart };

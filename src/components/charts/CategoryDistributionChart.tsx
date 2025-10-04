@@ -13,7 +13,7 @@ interface CategoryDistributionChartProps {
   data: CategoryDistributionData[];
 }
 
-const CategoryDistributionChart: React.FC<CategoryDistributionChartProps> = ({ data }) => {
+const CategoryDistributionChart: React.FC<CategoryDistributionChartProps> = React.memo(({ data }) => {
   const RADIAN = Math.PI / 180;
   const renderCustomizedLabel = ({
     cx,
@@ -73,6 +73,7 @@ const CategoryDistributionChart: React.FC<CategoryDistributionChartProps> = ({ d
       </PieChart>
     </ResponsiveContainer>
   );
-};
+});
+CategoryDistributionChart.displayName = "CategoryDistributionChart";
 
 export { CategoryDistributionChart };
