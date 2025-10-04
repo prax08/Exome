@@ -6,6 +6,7 @@ import { BottomNavigation } from "@/components/BottomNavigation";
 import { cn } from "@/lib/utils";
 import { useOnlineStatus } from "@/hooks/use-online-status"; // Import the new hook
 import { toast } from "sonner"; // Import toast for notifications
+import { PWAInstallPrompt } from "@/components/PWAInstallPrompt"; // Import PWAInstallPrompt
 
 interface PageLayoutProps {
   children: React.ReactNode;
@@ -34,6 +35,7 @@ const PageLayout: React.FC<PageLayoutProps> = ({ children, className }) => {
         {children}
       </main>
       <BottomNavigation />
+      <PWAInstallPrompt /> {/* Integrate the PWA install prompt here */}
       {/* Add padding to the bottom of the main content to prevent it from being hidden by the fixed bottom navigation */}
       <div className="block md:hidden h-16"></div> 
     </div>
