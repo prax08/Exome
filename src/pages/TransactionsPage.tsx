@@ -12,7 +12,8 @@ import {
   Search,
   ArrowUpDown,
   Tag,
-  Paperclip, // Import Paperclip icon for receipts
+  Paperclip,
+  CreditCard,
 } from "lucide-react";
 import { Button } from "@/components/Button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/Card";
@@ -48,6 +49,7 @@ import { Pagination, PaginationContent, PaginationItem, PaginationPrevious, Pagi
 import { useIsMobile } from "@/hooks/use-mobile";
 import { toast } from "sonner";
 import { CategorySelect } from "@/components/CategorySelect";
+import { Checkbox } from "@/components/ui/checkbox";
 
 // Define transaction type for client-side
 interface Transaction {
@@ -59,18 +61,30 @@ interface Transaction {
   category_id?: string | null;
   category_name?: string | null;
   category_color?: string | null;
-  receipt_url?: string | null; // Add receipt_url
+  receipt_url?: string | null;
+  vendor?: string | null;
+  payment_method?: string | null;
   created_at: string;
 }
 
 type TransactionTypeFilter = 'all' | 'income' | 'expense';
-type SortColumn = 'date' | 'amount';
+type SortColumn = 'date' | 'amount' | 'description' | 'vendor' | 'payment_method';
 type SortDirection = 'asc' | 'desc';
 
 const transactionTypeFilterOptions = [
   { value: "all", label: "All" },
   { value: "income", label: "Income" },
   { value: "expense", label: "Expense" },
+];
+
+const paymentMethodFilterOptions = [
+  { value: "all", label: "All Payment Methods" },
+  { value: "cash", label: "Cash" },
+  { value: "credit_card", label: "Credit Card" },
+  { value: "debit_card", label: "Debit Card" },
+  { value: "bank_transfer", label: "Bank Transfer" },
+  { value: "upi", label: "UPI" },
+  { value: "other", label: "Other" },
 ];
 
 const TransactionsPage: React.FC = () => {
@@ -86,6 +100,7 @@ const TransactionsPage: React.FC = () => {
   const [dateRange, setDateRange] = useState<DateRange | undefined>(undefined);
   const [searchTerm, setSearchTerm] = useState("");
   const [categoryFilter, setCategoryFilter] = useState<string | undefined>(undefined);
+  const [paymentMethodFilter, setPaymentMethodFilter] = useState<string>('all');
 
   // Pagination states
   const [currentPage, setCurrentPage] = useState(1);
@@ -95,11 +110,16 @@ const TransactionsPage: React.FC = () => {
   const [sortColumn, setSortColumn] = useState<SortColumn>('date');
   const [sortDirection, setSortDirection] = useState<SortDirection>('desc');
 
+  // Bulk action states
+  const [selectedTransactionIds, setSelectedTransactionIds] = useState<string[]>([]);
+  const [isBulkDeleting, setIsBulkDeleting] = useState(false);
+
   const fetchTransactions = async (
     typeFilter: TransactionTypeFilter,
     range: DateRange | undefined,
     search: string,
     category: string | undefined,
+    paymentMethod: string,
     page: number,
     limit: number,
     column: SortColumn,
@@ -128,10 +148,13 @@ const TransactionsPage: React.FC = () => {
       query = query.lte('date', format(range.to, 'yyyy-MM-dd'));
     }
     if (search) {
-      query = query.ilike('description', `%${search}%`);
+      query = query.or(`description.ilike.%${search}%,vendor.ilike.%${search}%`);
     }
     if (category) {
       query = query.eq('category_id', category);
+    }
+    if (paymentMethod !== 'all') {
+      query = query.eq('payment_method', paymentMethod);
     }
 
     query = query.order(column, { ascending: direction === 'asc' });
@@ -166,6 +189,7 @@ const TransactionsPage: React.FC = () => {
       dateRange,
       searchTerm,
       categoryFilter,
+      paymentMethodFilter,
       currentPage,
       itemsPerPage,
       sortColumn,
@@ -177,6 +201,7 @@ const TransactionsPage: React.FC = () => {
         dateRange,
         searchTerm,
         categoryFilter,
+        paymentMethodFilter,
         currentPage,
         itemsPerPage,
         sortColumn,
@@ -185,6 +210,8 @@ const TransactionsPage: React.FC = () => {
     enabled: !!user,
     placeholderData: (previousData) => previousData,
   });
+
+  const transactions = data?.data || [];
 
   const totalPages = useMemo(() => {
     if (!data?.count) return 0;
@@ -231,6 +258,52 @@ const TransactionsPage: React.FC = () => {
     } else {
       setSortColumn(column);
       setSortDirection('desc');
+    }
+  };
+
+  const handleSelectTransaction = (id: string, isSelected: boolean) => {
+    if (isSelected) {
+      setSelectedTransactionIds((prev) => [...prev, id]);
+    } else {
+      setSelectedTransactionIds((prev) => prev.filter((_id) => _id !== id));
+    }
+  };
+
+  const handleSelectAllTransactions = (isSelected: boolean) => {
+    if (isSelected) {
+      setSelectedTransactionIds(transactions.map((t) => t.id));
+    } else {
+      setSelectedTransactionIds([]);
+    }
+  };
+
+  const handleBulkDelete = async () => {
+    if (!user) {
+      toast.error("You must be logged in to delete transactions.");
+      return;
+    }
+    if (selectedTransactionIds.length === 0) {
+      toast.info("No transactions selected for deletion.");
+      return;
+    }
+
+    if (window.confirm(`Are you sure you want to delete ${selectedTransactionIds.length} selected transactions? This action cannot be undone.`)) {
+      setIsBulkDeleting(true);
+      const { error } = await supabase
+        .from('transactions')
+        .delete()
+        .in('id', selectedTransactionIds)
+        .eq('user_id', user.id); // Ensure only user's own transactions are deleted
+
+      if (error) {
+        console.error("Error bulk deleting transactions:", error);
+        toast.error(`Failed to delete transactions: ${error.message}`);
+      } else {
+        toast.success(`${selectedTransactionIds.length} transactions deleted successfully!`);
+        setSelectedTransactionIds([]);
+        refetch();
+      }
+      setIsBulkDeleting(false);
     }
   };
 
@@ -297,7 +370,6 @@ const TransactionsPage: React.FC = () => {
     );
   }
 
-  const transactions = data?.data || [];
   const hasTransactions = transactions.length > 0;
 
   return (
@@ -320,7 +392,7 @@ const TransactionsPage: React.FC = () => {
           <CardTitle>Filter Transactions</CardTitle>
           <CardDescription>Refine your transaction view.</CardDescription>
         </CardHeader>
-        <CardContent className="grid grid-cols-1 md:grid-cols-4 gap-4">
+        <CardContent className="grid grid-cols-1 md:grid-cols-5 gap-4">
           <div className="col-span-1">
             <Select
               options={transactionTypeFilterOptions}
@@ -345,6 +417,17 @@ const TransactionsPage: React.FC = () => {
             />
           </div>
           <div className="col-span-1">
+            <Select
+              options={paymentMethodFilterOptions}
+              placeholder="Filter by payment method"
+              onValueChange={(value) => {
+                setPaymentMethodFilter(value);
+                setCurrentPage(1);
+              }}
+              value={paymentMethodFilter}
+            />
+          </div>
+          <div className="col-span-1">
             <DateRangePicker
               dateRange={dateRange}
               onSelect={(range) => {
@@ -357,7 +440,7 @@ const TransactionsPage: React.FC = () => {
           <div className="col-span-1 relative">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
             <Input
-              placeholder="Search description..."
+              placeholder="Search description or vendor..."
               value={searchTerm}
               onChange={(e) => {
                 setSearchTerm(e.target.value);
@@ -369,6 +452,21 @@ const TransactionsPage: React.FC = () => {
         </CardContent>
       </Card>
 
+      {selectedTransactionIds.length > 0 && (
+        <Card className="p-4 flex items-center justify-between bg-accent/10 border-accent">
+          <p className="text-sm text-accent-foreground">
+            {selectedTransactionIds.length} transaction(s) selected.
+          </p>
+          <Button
+            variant="destructive"
+            onClick={handleBulkDelete}
+            disabled={isBulkDeleting}
+          >
+            {isBulkDeleting ? "Deleting..." : `Delete Selected (${selectedTransactionIds.length})`}
+          </Button>
+        </Card>
+      )}
+
       {hasTransactions ? (
         <>
           {isMobile ? (
@@ -379,6 +477,12 @@ const TransactionsPage: React.FC = () => {
                   <CardContent className="p-4">
                     <div className="flex items-center justify-between">
                       <div className="flex items-center space-x-3">
+                        <Checkbox
+                          checked={selectedTransactionIds.includes(transaction.id)}
+                          onCheckedChange={(checked) =>
+                            handleSelectTransaction(transaction.id, checked === true)
+                          }
+                        />
                         {transaction.type === 'income' ? (
                           <ArrowUpCircle className="h-5 w-5 text-green-500" />
                         ) : (
@@ -386,10 +490,19 @@ const TransactionsPage: React.FC = () => {
                         )}
                         <div>
                           <p className="font-medium">{transaction.description}</p>
+                          {transaction.vendor && (
+                            <p className="text-xs text-muted-foreground">Vendor: {transaction.vendor}</p>
+                          )}
                           {transaction.category_name && (
                             <div className="flex items-center text-xs text-muted-foreground">
                               <Tag className="h-3 w-3 mr-1" style={{ color: transaction.category_color || undefined }} />
                               <span>{transaction.category_name}</span>
+                            </div>
+                          )}
+                          {transaction.payment_method && (
+                            <div className="flex items-center text-xs text-muted-foreground">
+                              <CreditCard className="h-3 w-3 mr-1" />
+                              <span className="capitalize">{transaction.payment_method.replace('_', ' ')}</span>
                             </div>
                           )}
                           <p className="text-sm text-muted-foreground">{format(new Date(transaction.date), 'PPP')}</p>
@@ -432,9 +545,42 @@ const TransactionsPage: React.FC = () => {
               <Table>
                 <TableHeader>
                   <TableRow>
+                    <TableHead className="w-[30px]">
+                      <Checkbox
+                        checked={selectedTransactionIds.length === transactions.length && transactions.length > 0}
+                        onCheckedChange={(checked) => handleSelectAllTransactions(checked === true)}
+                        aria-label="Select all"
+                      />
+                    </TableHead>
                     <TableHead className="w-[50px]">Type</TableHead>
-                    <TableHead>Description</TableHead>
+                    <TableHead
+                      className="cursor-pointer hover:text-primary"
+                      onClick={() => handleSort('description')}
+                    >
+                      <div className="flex items-center">
+                        Description
+                        <ArrowUpDown className={cn("ml-2 h-4 w-4", sortColumn === 'description' && "text-primary")} />
+                      </div>
+                    </TableHead>
+                    <TableHead
+                      className="cursor-pointer hover:text-primary"
+                      onClick={() => handleSort('vendor')}
+                    >
+                      <div className="flex items-center">
+                        Vendor
+                        <ArrowUpDown className={cn("ml-2 h-4 w-4", sortColumn === 'vendor' && "text-primary")} />
+                      </div>
+                    </TableHead>
                     <TableHead>Category</TableHead>
+                    <TableHead
+                      className="cursor-pointer hover:text-primary"
+                      onClick={() => handleSort('payment_method')}
+                    >
+                      <div className="flex items-center">
+                        Payment Method
+                        <ArrowUpDown className={cn("ml-2 h-4 w-4", sortColumn === 'payment_method' && "text-primary")} />
+                      </div>
+                    </TableHead>
                     <TableHead
                       className="cursor-pointer hover:text-primary"
                       onClick={() => handleSort('date')}
@@ -444,7 +590,7 @@ const TransactionsPage: React.FC = () => {
                         <ArrowUpDown className={cn("ml-2 h-4 w-4", sortColumn === 'date' && "text-primary")} />
                       </div>
                     </TableHead>
-                    <TableHead className="w-[50px]">Receipt</TableHead> {/* New Receipt column */}
+                    <TableHead className="w-[50px]">Receipt</TableHead>
                     <TableHead
                       className="text-right cursor-pointer hover:text-primary"
                       onClick={() => handleSort('amount')}
@@ -461,6 +607,14 @@ const TransactionsPage: React.FC = () => {
                   {transactions.map((transaction) => (
                     <TableRow key={transaction.id}>
                       <TableCell>
+                        <Checkbox
+                          checked={selectedTransactionIds.includes(transaction.id)}
+                          onCheckedChange={(checked) =>
+                            handleSelectTransaction(transaction.id, checked === true)
+                          }
+                        />
+                      </TableCell>
+                      <TableCell>
                         {transaction.type === 'income' ? (
                           <ArrowUpCircle className="h-5 w-5 text-green-500" />
                         ) : (
@@ -468,6 +622,7 @@ const TransactionsPage: React.FC = () => {
                         )}
                       </TableCell>
                       <TableCell className="font-medium">{transaction.description}</TableCell>
+                      <TableCell>{transaction.vendor || <span className="text-muted-foreground">-</span>}</TableCell>
                       <TableCell>
                         {transaction.category_name ? (
                           <div className="flex items-center">
@@ -478,6 +633,7 @@ const TransactionsPage: React.FC = () => {
                           <span className="text-muted-foreground">-</span>
                         )}
                       </TableCell>
+                      <TableCell className="capitalize">{transaction.payment_method?.replace('_', ' ') || <span className="text-muted-foreground">-</span>}</TableCell>
                       <TableCell>{format(new Date(transaction.date), 'PPP')}</TableCell>
                       <TableCell>
                         {transaction.receipt_url && (

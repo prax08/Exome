@@ -15,7 +15,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useSession } from "@/contexts/SessionContext";
 import { format } from "date-fns";
 import { CategorySelect } from "@/components/CategorySelect";
-import { ReceiptUpload } from "@/components/ReceiptUpload"; // Import ReceiptUpload
+import { ReceiptUpload } from "@/components/ReceiptUpload";
 
 // Define transaction type for client-side
 interface Transaction {
@@ -25,7 +25,9 @@ interface Transaction {
   description: string;
   date: string; // ISO date string
   category_id?: string | null;
-  receipt_url?: string | null; // Add receipt_url
+  receipt_url?: string | null;
+  vendor?: string | null;
+  payment_method?: string | null; // Add payment_method
   created_at: string;
 }
 
@@ -43,7 +45,9 @@ const transactionFormSchema = z.object({
     required_error: "A transaction date is required.",
   }),
   category_id: z.string().optional().nullable(),
-  receipt_url: z.string().optional().nullable(), // Add receipt_url to schema
+  receipt_url: z.string().optional().nullable(),
+  vendor: z.string().max(100, { message: "Vendor name is too long." }).optional().nullable(),
+  payment_method: z.string().optional().nullable(), // Add payment_method to schema
 });
 
 interface TransactionFormModalProps {
@@ -57,6 +61,15 @@ interface TransactionFormModalProps {
 const transactionTypeOptions = [
   { value: "income", label: "Income" },
   { value: "expense", label: "Expense" },
+];
+
+const paymentMethodOptions = [
+  { value: "cash", label: "Cash" },
+  { value: "credit_card", label: "Credit Card" },
+  { value: "debit_card", label: "Debit Card" },
+  { value: "bank_transfer", label: "Bank Transfer" },
+  { value: "upi", label: "UPI" },
+  { value: "other", label: "Other" },
 ];
 
 const TransactionFormModal: React.FC<TransactionFormModalProps> = ({
@@ -76,7 +89,9 @@ const TransactionFormModal: React.FC<TransactionFormModalProps> = ({
       description: "",
       date: new Date(),
       category_id: null,
-      receipt_url: null, // Initialize receipt_url
+      receipt_url: null,
+      vendor: null,
+      payment_method: null, // Initialize payment_method
     },
   });
 
@@ -89,7 +104,9 @@ const TransactionFormModal: React.FC<TransactionFormModalProps> = ({
           description: editingTransaction.description,
           date: new Date(editingTransaction.date),
           category_id: editingTransaction.category_id || null,
-          receipt_url: editingTransaction.receipt_url || null, // Load receipt_url
+          receipt_url: editingTransaction.receipt_url || null,
+          vendor: editingTransaction.vendor || null,
+          payment_method: editingTransaction.payment_method || null, // Load payment_method
         });
       } else {
         form.reset({
@@ -99,6 +116,8 @@ const TransactionFormModal: React.FC<TransactionFormModalProps> = ({
           date: new Date(),
           category_id: null,
           receipt_url: null,
+          vendor: null,
+          payment_method: null,
         });
       }
     }
@@ -116,7 +135,9 @@ const TransactionFormModal: React.FC<TransactionFormModalProps> = ({
       description: values.description,
       date: format(values.date, 'yyyy-MM-dd'),
       category_id: values.category_id || null,
-      receipt_url: values.receipt_url || null, // Ensure null if empty string
+      receipt_url: values.receipt_url || null,
+      vendor: values.vendor || null,
+      payment_method: values.payment_method || null, // Save payment_method
     };
 
     if (editingTransaction) {
@@ -242,6 +263,36 @@ const TransactionFormModal: React.FC<TransactionFormModalProps> = ({
                 <FormControl>
                   <Input placeholder="Groceries, Salary, Rent, etc." {...field} error={!!form.formState.errors.description} />
                 </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+          <FormField
+            control={form.control}
+            name="vendor"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Vendor (Optional)</FormLabel>
+                <FormControl>
+                  <Input placeholder="Amazon, Starbucks, Employer" {...field} error={!!form.formState.errors.vendor} />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+          <FormField
+            control={form.control}
+            name="payment_method"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Payment Method (Optional)</FormLabel>
+                <Select
+                  options={paymentMethodOptions}
+                  placeholder="Select payment method"
+                  onValueChange={field.onChange}
+                  value={field.value || ""}
+                  className={!!form.formState.errors.payment_method ? "border-destructive focus-visible:ring-destructive" : ""}
+                />
                 <FormMessage />
               </FormItem>
             )}
