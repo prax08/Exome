@@ -19,9 +19,8 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { ProgressBar } from "@/components/ProgressBar"; // Import the new ProgressBar
+import { ProgressBar } from "@/components/ProgressBar";
 import { cn } from "@/lib/utils";
-// import { useIsMobile } from "@/hooks/use-mobile"; // Removed unused variable
 import { toast } from "sonner";
 
 // Define budget type for client-side
@@ -40,7 +39,6 @@ interface Budget {
 
 const BudgetsPage: React.FC = () => {
   const { user } = useSession();
-  // const isMobile = useIsMobile(); // Removed unused variable
 
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingBudget, setEditingBudget] = useState<Budget | null>(null);
@@ -219,7 +217,7 @@ const BudgetsPage: React.FC = () => {
                       <span>Spent: ₹{budget.spent.toFixed(2)}</span>
                       <span>Budget: ₹{budget.amount.toFixed(2)}</span>
                     </div>
-                    <ProgressBar // Use ProgressBar here
+                    <ProgressBar
                       value={progress}
                       className="h-2 mt-2"
                       indicatorClassName={cn({
