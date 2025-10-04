@@ -7,6 +7,7 @@ import { Form, FormField, FormItem, FormLabel, FormControl, FormMessage } from "
 import { Input } from "@/components/Input";
 import { Select } from "@/components/Select";
 import { DatePicker } from "@/components/DatePicker";
+import { CategorySelect } from "@/components/CategorySelect";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
@@ -14,23 +15,22 @@ import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { useSession } from "@/contexts/SessionContext";
 import { format } from "date-fns";
-import { CategorySelect } from "@/components/CategorySelect";
-import { ReceiptUpload } from "@/components/ReceiptUpload"; // Import ReceiptUpload
 
-// Define transaction type for client-side
-interface Transaction {
+// Define recurring transaction type for client-side
+interface RecurringTransaction {
   id: string;
   amount: number;
   type: 'income' | 'expense';
   description: string;
-  date: string; // ISO date string
   category_id?: string | null;
-  receipt_url?: string | null; // Add receipt_url
+  start_date: string; // ISO date string
+  frequency: 'daily' | 'weekly' | 'monthly' | 'yearly';
+  end_date?: string | null; // ISO date string, optional
   created_at: string;
 }
 
-// Form schema for adding/editing transactions
-const transactionFormSchema = z.object({
+// Form schema for adding/editing recurring transactions
+const recurringTransactionFormSchema = z.object({
   amount: z.preprocess(
     (val) => Number(val),
     z.number().positive({ message: "Amount must be positive." })
@@ -39,18 +39,21 @@ const transactionFormSchema = z.object({
     required_error: "Transaction type is required.",
   }),
   description: z.string().min(1, { message: "Description is required." }).max(255, { message: "Description is too long." }),
-  date: z.date({
-    required_error: "A transaction date is required.",
-  }),
   category_id: z.string().optional().nullable(),
-  receipt_url: z.string().optional().nullable(), // Add receipt_url to schema
+  start_date: z.date({
+    required_error: "A start date is required.",
+  }),
+  frequency: z.enum(['daily', 'weekly', 'monthly', 'yearly'], {
+    required_error: "Frequency is required.",
+  }),
+  end_date: z.date().optional().nullable(),
 });
 
-interface TransactionFormModalProps {
+interface RecurringTransactionFormModalProps {
   isOpen: boolean;
   onOpenChange: (open: boolean) => void;
   onSuccess: () => void;
-  editingTransaction?: Transaction | null;
+  editingRecurringTransaction?: RecurringTransaction | null;
   initialType?: 'income' | 'expense';
 }
 
@@ -59,112 +62,115 @@ const transactionTypeOptions = [
   { value: "expense", label: "Expense" },
 ];
 
-const TransactionFormModal: React.FC<TransactionFormModalProps> = ({
+const frequencyOptions = [
+  { value: "daily", label: "Daily" },
+  { value: "weekly", label: "Weekly" },
+  { value: "monthly", label: "Monthly" },
+  { value: "yearly", label: "Yearly" },
+];
+
+const RecurringTransactionFormModal: React.FC<RecurringTransactionFormModalProps> = ({
   isOpen,
   onOpenChange,
   onSuccess,
-  editingTransaction,
+  editingRecurringTransaction,
   initialType = 'expense',
 }) => {
   const { user } = useSession();
 
-  const form = useForm<z.infer<typeof transactionFormSchema>>({
-    resolver: zodResolver(transactionFormSchema),
+  const form = useForm<z.infer<typeof recurringTransactionFormSchema>>({
+    resolver: zodResolver(recurringTransactionFormSchema),
     defaultValues: {
       amount: 0,
       type: initialType,
       description: "",
-      date: new Date(),
       category_id: null,
-      receipt_url: null, // Initialize receipt_url
+      start_date: new Date(),
+      frequency: "monthly",
+      end_date: null,
     },
   });
 
   useEffect(() => {
     if (isOpen) {
-      if (editingTransaction) {
+      if (editingRecurringTransaction) {
         form.reset({
-          amount: editingTransaction.amount,
-          type: editingTransaction.type,
-          description: editingTransaction.description,
-          date: new Date(editingTransaction.date),
-          category_id: editingTransaction.category_id || null,
-          receipt_url: editingTransaction.receipt_url || null, // Load receipt_url
+          amount: editingRecurringTransaction.amount,
+          type: editingRecurringTransaction.type,
+          description: editingRecurringTransaction.description,
+          category_id: editingRecurringTransaction.category_id || null,
+          start_date: new Date(editingRecurringTransaction.start_date),
+          frequency: editingRecurringTransaction.frequency,
+          end_date: editingRecurringTransaction.end_date ? new Date(editingRecurringTransaction.end_date) : null,
         });
       } else {
         form.reset({
           amount: 0,
           type: initialType,
           description: "",
-          date: new Date(),
           category_id: null,
-          receipt_url: null,
+          start_date: new Date(),
+          frequency: "monthly",
+          end_date: null,
         });
       }
     }
-  }, [isOpen, editingTransaction, initialType, form]);
+  }, [isOpen, editingRecurringTransaction, initialType, form]);
 
-  const onSubmit = async (values: z.infer<typeof transactionFormSchema>) => {
+  const onSubmit = async (values: z.infer<typeof recurringTransactionFormSchema>) => {
     if (!user) {
-      toast.error("You must be logged in to manage transactions.");
+      toast.error("You must be logged in to manage recurring transactions.");
       return;
     }
 
-    const transactionData = {
+    const recurringTransactionData = {
       amount: values.amount,
       type: values.type,
       description: values.description,
-      date: format(values.date, 'yyyy-MM-dd'),
       category_id: values.category_id || null,
-      receipt_url: values.receipt_url || null, // Ensure null if empty string
+      start_date: format(values.start_date, 'yyyy-MM-dd'),
+      frequency: values.frequency,
+      end_date: values.end_date ? format(values.end_date, 'yyyy-MM-dd') : null,
     };
 
-    if (editingTransaction) {
-      // Update existing transaction
+    if (editingRecurringTransaction) {
+      // Update existing recurring transaction
       const { error } = await supabase
-        .from('transactions')
-        .update(transactionData)
-        .eq('id', editingTransaction.id)
+        .from('recurring_transactions')
+        .update(recurringTransactionData)
+        .eq('id', editingRecurringTransaction.id)
         .eq('user_id', user.id);
 
       if (error) {
-        console.error("Error updating transaction:", error);
-        toast.error(`Failed to update transaction: ${error.message}`);
+        console.error("Error updating recurring transaction:", error);
+        toast.error(`Failed to update recurring transaction: ${error.message}`);
       } else {
-        toast.success("Transaction updated successfully!");
+        toast.success("Recurring transaction updated successfully!");
         onOpenChange(false);
         onSuccess();
       }
     } else {
-      // Add new transaction
-      const { error } = await supabase.from('transactions').insert({
+      // Add new recurring transaction
+      const { error } = await supabase.from('recurring_transactions').insert({
         user_id: user.id,
-        ...transactionData,
+        ...recurringTransactionData,
       });
 
       if (error) {
-        console.error("Error adding transaction:", error);
-        toast.error(`Failed to add transaction: ${error.message}`);
+        console.error("Error adding recurring transaction:", error);
+        toast.error(`Failed to add recurring transaction: ${error.message}`);
       } else {
-        toast.success("Transaction added successfully!");
+        toast.success("Recurring transaction added successfully!");
         onOpenChange(false);
         onSuccess();
       }
     }
   };
 
-  const handleReceiptUploadSuccess = (newUrl: string) => {
-    form.setValue("receipt_url", newUrl, { shouldDirty: true, shouldValidate: true });
-  };
-
-  const handleReceiptRemoveSuccess = () => {
-    form.setValue("receipt_url", null, { shouldDirty: true, shouldValidate: true });
-  };
-
   return (
     <Modal
-      title={editingTransaction ? "Edit Transaction" : "Add New Transaction"}
-      description="Enter the details for your transaction."
+      title={editingRecurringTransaction ? "Edit Recurring Transaction" : "Add New Recurring Transaction"}
+      description="Set up a transaction that occurs regularly."
       open={isOpen}
       onOpenChange={onOpenChange}
       footer={
@@ -172,14 +178,14 @@ const TransactionFormModal: React.FC<TransactionFormModalProps> = ({
           <Button variant="secondary" onClick={() => onOpenChange(false)}>
             Cancel
           </Button>
-          <Button type="submit" form="transaction-form" disabled={form.formState.isSubmitting}>
-            {form.formState.isSubmitting ? (editingTransaction ? "Saving..." : "Adding...") : (editingTransaction ? "Save Changes" : "Add Transaction")}
+          <Button type="submit" form="recurring-transaction-form" disabled={form.formState.isSubmitting}>
+            {form.formState.isSubmitting ? (editingRecurringTransaction ? "Saving..." : "Adding...") : (editingRecurringTransaction ? "Save Changes" : "Add Recurring Transaction")}
           </Button>
         </div>
       }
     >
       <Form {...form}>
-        <form id="transaction-form" onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+        <form id="recurring-transaction-form" onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
           <FormField
             control={form.control}
             name="type"
@@ -240,7 +246,7 @@ const TransactionFormModal: React.FC<TransactionFormModalProps> = ({
               <FormItem>
                 <FormLabel>Description</FormLabel>
                 <FormControl>
-                  <Input placeholder="Groceries, Salary, Rent, etc." {...field} error={!!form.formState.errors.description} />
+                  <Input placeholder="Rent, Salary, Subscription, etc." {...field} error={!!form.formState.errors.description} />
                 </FormControl>
                 <FormMessage />
               </FormItem>
@@ -248,38 +254,55 @@ const TransactionFormModal: React.FC<TransactionFormModalProps> = ({
           />
           <FormField
             control={form.control}
-            name="date"
+            name="start_date"
             render={({ field }) => (
               <FormItem className="flex flex-col">
-                <FormLabel>Date</FormLabel>
+                <FormLabel>Start Date</FormLabel>
                 <DatePicker
                   date={field.value}
                   onSelect={field.onChange}
-                  className={!!form.formState.errors.date ? "border-destructive focus-visible:ring-destructive" : ""}
+                  className={!!form.formState.errors.start_date ? "border-destructive focus-visible:ring-destructive" : ""}
                 />
                 <FormMessage />
               </FormItem>
             )}
           />
-          {user && editingTransaction && ( // Only show ReceiptUpload for existing transactions
-            <FormItem>
-              <FormLabel>Receipt</FormLabel>
-              <FormControl>
-                <ReceiptUpload
-                  userId={user.id}
-                  transactionId={editingTransaction.id}
-                  currentReceiptUrl={form.watch("receipt_url")}
-                  onUploadSuccess={handleReceiptUploadSuccess}
-                  onRemoveSuccess={handleReceiptRemoveSuccess}
+          <FormField
+            control={form.control}
+            name="frequency"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Frequency</FormLabel>
+                <Select
+                  options={frequencyOptions}
+                  placeholder="Select frequency"
+                  onValueChange={field.onChange}
+                  value={field.value}
+                  className={!!form.formState.errors.frequency ? "border-destructive focus-visible:ring-destructive" : ""}
                 />
-              </FormControl>
-              <FormMessage />
-            </FormItem>
-          )}
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+          <FormField
+            control={form.control}
+            name="end_date"
+            render={({ field }) => (
+              <FormItem className="flex flex-col">
+                <FormLabel>End Date (Optional)</FormLabel>
+                <DatePicker
+                  date={field.value || undefined}
+                  onSelect={field.onChange}
+                  className={!!form.formState.errors.end_date ? "border-destructive focus-visible:ring-destructive" : ""}
+                />
+                <FormMessage />
+              </FormItem>
+            )}
+          />
         </form>
       </Form>
     </Modal>
   );
 };
 
-export { TransactionFormModal };
+export { RecurringTransactionFormModal };

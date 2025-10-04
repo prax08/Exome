@@ -11,7 +11,8 @@ import {
   CalendarDays,
   Search,
   ArrowUpDown,
-  Tag, // Import Tag icon for categories
+  Tag,
+  Paperclip, // Import Paperclip icon for receipts
 } from "lucide-react";
 import { Button } from "@/components/Button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/Card";
@@ -46,7 +47,7 @@ import { cn } from "@/lib/utils";
 import { Pagination, PaginationContent, PaginationItem, PaginationPrevious, PaginationLink, PaginationNext } from "@/components/ui/pagination";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { toast } from "sonner";
-import { CategorySelect } from "@/components/CategorySelect"; // Import CategorySelect
+import { CategorySelect } from "@/components/CategorySelect";
 
 // Define transaction type for client-side
 interface Transaction {
@@ -55,9 +56,10 @@ interface Transaction {
   type: 'income' | 'expense';
   description: string;
   date: string; // ISO date string
-  category_id?: string | null; // Add category_id
-  category_name?: string | null; // Add category_name for display
-  category_color?: string | null; // Add category_color for display
+  category_id?: string | null;
+  category_name?: string | null;
+  category_color?: string | null;
+  receipt_url?: string | null; // Add receipt_url
   created_at: string;
 }
 
@@ -83,11 +85,11 @@ const TransactionsPage: React.FC = () => {
   const [transactionTypeFilter, setTransactionTypeFilter] = useState<TransactionTypeFilter>('all');
   const [dateRange, setDateRange] = useState<DateRange | undefined>(undefined);
   const [searchTerm, setSearchTerm] = useState("");
-  const [categoryFilter, setCategoryFilter] = useState<string | undefined>(undefined); // New category filter state
+  const [categoryFilter, setCategoryFilter] = useState<string | undefined>(undefined);
 
   // Pagination states
   const [currentPage, setCurrentPage] = useState(1);
-  const [itemsPerPage, setItemsPerPage] = useState(10); // You can make this configurable
+  const [itemsPerPage, setItemsPerPage] = useState(10);
 
   // Sorting states
   const [sortColumn, setSortColumn] = useState<SortColumn>('date');
@@ -97,7 +99,7 @@ const TransactionsPage: React.FC = () => {
     typeFilter: TransactionTypeFilter,
     range: DateRange | undefined,
     search: string,
-    category: string | undefined, // Add category to fetch params
+    category: string | undefined,
     page: number,
     limit: number,
     column: SortColumn,
@@ -128,7 +130,7 @@ const TransactionsPage: React.FC = () => {
     if (search) {
       query = query.ilike('description', `%${search}%`);
     }
-    if (category) { // Apply category filter
+    if (category) {
       query = query.eq('category_id', category);
     }
 
@@ -163,7 +165,7 @@ const TransactionsPage: React.FC = () => {
       transactionTypeFilter,
       dateRange,
       searchTerm,
-      categoryFilter, // Add categoryFilter to queryKey
+      categoryFilter,
       currentPage,
       itemsPerPage,
       sortColumn,
@@ -174,14 +176,14 @@ const TransactionsPage: React.FC = () => {
         transactionTypeFilter,
         dateRange,
         searchTerm,
-        categoryFilter, // Pass category filter
+        categoryFilter,
         currentPage,
         itemsPerPage,
         sortColumn,
         sortDirection
       ),
     enabled: !!user,
-    placeholderData: (previousData) => previousData, // Keep previous data while fetching new
+    placeholderData: (previousData) => previousData,
   });
 
   const totalPages = useMemo(() => {
@@ -228,7 +230,7 @@ const TransactionsPage: React.FC = () => {
       setSortDirection(sortDirection === 'asc' ? 'desc' : 'asc');
     } else {
       setSortColumn(column);
-      setSortDirection('desc'); // Default to descending for new sort column
+      setSortDirection('desc');
     }
   };
 
@@ -277,7 +279,7 @@ const TransactionsPage: React.FC = () => {
     );
   };
 
-  if (isLoading && !data) { // Only show full loading if no data is present yet
+  if (isLoading && !data) {
     return (
       <div className="flex justify-center items-center min-h-[calc(100vh-160px)]">
         <Loading count={5} className="w-full max-w-md" />
@@ -318,26 +320,26 @@ const TransactionsPage: React.FC = () => {
           <CardTitle>Filter Transactions</CardTitle>
           <CardDescription>Refine your transaction view.</CardDescription>
         </CardHeader>
-        <CardContent className="grid grid-cols-1 md:grid-cols-4 gap-4"> {/* Adjusted grid for new filter */}
+        <CardContent className="grid grid-cols-1 md:grid-cols-4 gap-4">
           <div className="col-span-1">
             <Select
               options={transactionTypeFilterOptions}
               placeholder="Filter by type"
               onValueChange={(value) => {
                 setTransactionTypeFilter(value as TransactionTypeFilter);
-                setCategoryFilter(undefined); // Reset category filter when type changes
-                setCurrentPage(1); // Reset page on filter change
+                setCategoryFilter(undefined);
+                setCurrentPage(1);
               }}
               value={transactionTypeFilter}
             />
           </div>
           <div className="col-span-1">
             <CategorySelect
-              transactionType={transactionTypeFilter} // Pass selected transaction type to filter categories
+              transactionType={transactionTypeFilter}
               value={categoryFilter || ""}
               onValueChange={(value) => {
                 setCategoryFilter(value || undefined);
-                setCurrentPage(1); // Reset page on filter change
+                setCurrentPage(1);
               }}
               placeholder="Filter by category"
             />
@@ -347,7 +349,7 @@ const TransactionsPage: React.FC = () => {
               dateRange={dateRange}
               onSelect={(range) => {
                 setDateRange(range);
-                setCurrentPage(1); // Reset page on filter change
+                setCurrentPage(1);
               }}
               className="w-full"
             />
@@ -359,7 +361,7 @@ const TransactionsPage: React.FC = () => {
               value={searchTerm}
               onChange={(e) => {
                 setSearchTerm(e.target.value);
-                setCurrentPage(1); // Reset page on filter change
+                setCurrentPage(1);
               }}
               className="pl-9"
             />
@@ -394,6 +396,11 @@ const TransactionsPage: React.FC = () => {
                         </div>
                       </div>
                       <div className="flex items-center space-x-2">
+                        {transaction.receipt_url && (
+                          <a href={transaction.receipt_url} target="_blank" rel="noopener noreferrer" className="text-muted-foreground hover:text-primary">
+                            <Paperclip className="h-4 w-4" />
+                          </a>
+                        )}
                         <p className={`font-semibold ${transaction.type === 'income' ? 'text-green-600' : 'text-red-600'}`}>
                           ₹{transaction.amount.toFixed(2)}
                         </p>
@@ -427,7 +434,7 @@ const TransactionsPage: React.FC = () => {
                   <TableRow>
                     <TableHead className="w-[50px]">Type</TableHead>
                     <TableHead>Description</TableHead>
-                    <TableHead>Category</TableHead> {/* New Category column */}
+                    <TableHead>Category</TableHead>
                     <TableHead
                       className="cursor-pointer hover:text-primary"
                       onClick={() => handleSort('date')}
@@ -437,6 +444,7 @@ const TransactionsPage: React.FC = () => {
                         <ArrowUpDown className={cn("ml-2 h-4 w-4", sortColumn === 'date' && "text-primary")} />
                       </div>
                     </TableHead>
+                    <TableHead className="w-[50px]">Receipt</TableHead> {/* New Receipt column */}
                     <TableHead
                       className="text-right cursor-pointer hover:text-primary"
                       onClick={() => handleSort('amount')}
@@ -471,6 +479,13 @@ const TransactionsPage: React.FC = () => {
                         )}
                       </TableCell>
                       <TableCell>{format(new Date(transaction.date), 'PPP')}</TableCell>
+                      <TableCell>
+                        {transaction.receipt_url && (
+                          <a href={transaction.receipt_url} target="_blank" rel="noopener noreferrer" className="text-muted-foreground hover:text-primary">
+                            <Paperclip className="h-4 w-4" />
+                          </a>
+                        )}
+                      </TableCell>
                       <TableCell className={`text-right font-semibold ${transaction.type === 'income' ? 'text-green-600' : 'text-red-600'}`}>
                         ₹{transaction.amount.toFixed(2)}
                       </TableCell>
