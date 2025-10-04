@@ -5,11 +5,61 @@ import { Card, CardHeader, CardTitle, CardContent, CardDescription } from "@/com
 import { Modal } from "@/components/Modal";
 import { Loading } from "@/components/Loading";
 import { EmptyState } from "@/components/EmptyState";
+import { DatePicker } from "@/components/DatePicker";
+import { Select } from "@/components/Select";
+import {
+  Form,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormControl,
+  FormDescription,
+  FormMessage,
+} from "@/components/Form";
 import { useState } from "react";
 import { PlusCircle } from "lucide-react";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import * as z from "zod";
+
+const formSchema = z.object({
+  username: z.string().min(2, {
+    message: "Username must be at least 2 characters.",
+  }),
+  email: z.string().email({
+    message: "Please enter a valid email address.",
+  }),
+  accountType: z.string({
+    required_error: "Please select an account type.",
+  }),
+  transactionDate: z.date({
+    required_error: "A transaction date is required.",
+  }),
+});
 
 const Index = () => {
   const [isModalOpen, setIsModalOpen] = useState(false);
+
+  const form = useForm<z.infer<typeof formSchema>>({
+    resolver: zodResolver(formSchema),
+    defaultValues: {
+      username: "",
+      email: "",
+      accountType: "",
+      transactionDate: new Date(),
+    },
+  });
+
+  function onSubmit(values: z.infer<typeof formSchema>) {
+    console.log(values);
+    alert(JSON.stringify(values, null, 2));
+  }
+
+  const accountOptions = [
+    { value: "checking", label: "Checking" },
+    { value: "savings", label: "Savings" },
+    { value: "credit_card", label: "Credit Card" },
+  ];
 
   return (
     <div className="min-h-screen flex flex-col items-center justify-center bg-gray-100 dark:bg-gray-900 p-4">
@@ -114,6 +164,88 @@ const Index = () => {
               description="Start by adding your first income or expense."
               action={<Button variant="primary">Add Transaction</Button>}
             />
+          </CardContent>
+        </Card>
+
+        {/* Form Showcase */}
+        <Card className="md:col-span-2 lg:col-span-3">
+          <CardHeader>
+            <CardTitle>Form Components</CardTitle>
+            <CardDescription>Integrated forms with validation.</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <Form {...form}>
+              <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+                <FormField
+                  control={form.control}
+                  name="username"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Username</FormLabel>
+                      <FormControl>
+                        <Input placeholder="shadcn" {...field} error={!!form.formState.errors.username} />
+                      </FormControl>
+                      <FormDescription>
+                        This is your public display name.
+                      </FormDescription>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <FormField
+                  control={form.control}
+                  name="email"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Email</FormLabel>
+                      <FormControl>
+                        <Input type="email" placeholder="email@example.com" {...field} error={!!form.formState.errors.email} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <FormField
+                  control={form.control}
+                  name="accountType"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Account Type</FormLabel>
+                      <Select
+                        options={accountOptions}
+                        placeholder="Select an account type"
+                        onValueChange={field.onChange}
+                        defaultValue={field.value}
+                        className={!!form.formState.errors.accountType ? "border-destructive focus-visible:ring-destructive" : ""}
+                      />
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <FormField
+                  control={form.control}
+                  name="transactionDate"
+                  render={({ field }) => (
+                    <FormItem className="flex flex-col">
+                      <FormLabel>Transaction Date</FormLabel>
+                      <DatePicker
+                        date={field.value}
+                        onSelect={field.onChange}
+                        disabled={(date) =>
+                          date > new Date() || date < new Date("1900-01-01")
+                        }
+                        className={!!form.formState.errors.transactionDate ? "border-destructive focus-visible:ring-destructive" : ""}
+                      />
+                      <FormDescription>
+                        Your transaction date.
+                      </FormDescription>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <Button type="submit">Submit</Button>
+              </form>
+            </Form>
           </CardContent>
         </Card>
       </div>
