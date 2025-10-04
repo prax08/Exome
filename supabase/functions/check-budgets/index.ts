@@ -17,6 +17,16 @@ serve(async (req: Request) => {
   }
 
   try {
+    // SECURITY CHECK: Prevent client-side invocation for this service-role function
+    const authHeader = req.headers.get('Authorization');
+    if (authHeader) {
+      console.warn('Unauthorized access attempt to check-budgets function with Authorization header.');
+      return new Response('Unauthorized: This function cannot be called directly by authenticated users.', {
+        status: 403, // Forbidden
+        headers: corsHeaders,
+      });
+    }
+
     // Create a Supabase client with the service role key
     const supabaseAdmin = createClient(
       Deno.env.get('SUPABASE_URL') ?? '',

@@ -1,0 +1,12 @@
+{
+  "compilerOptions": {
+    "lib": ["deno.ns", "esnext"],
+    "strict": true,
+    "esModuleInterop": true,
+    "allowJs": true,
+    "checkJs": true,
+    "noEmit": true,
+    "resolveJsonModule": true,
+    "isolatedModules": true
+  }
+}
