@@ -44,7 +44,7 @@ const Header: React.FC<HeaderProps> = ({
             <SheetContent side="left" className="w-64 p-0">
               <div className="flex h-16 items-center px-6">
                 <Link to="/" className="font-bold text-lg">
-                  Finance App
+                  Exome Instruments
                 </Link>
               </div>
               <Separator />
@@ -68,7 +68,7 @@ const Header: React.FC<HeaderProps> = ({
 
           {/* Desktop Navigation (hidden on mobile) */}
           <Link to="/" className="hidden md:block font-bold text-lg">
-            Finance App
+            Exome Instruments
           </Link>
           <nav className="hidden md:flex items-center space-x-4 text-sm font-medium">
             <Link to="/" className="hover:text-primary">Dashboard</Link>
