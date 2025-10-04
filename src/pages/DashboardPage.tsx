@@ -1,13 +1,13 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/Card";
 import { Button } from "@/components/Button";
 import { PlusCircle, ArrowUpCircle, ArrowDownCircle, Wallet, CalendarDays } from "lucide-react";
 import { ResponsiveGrid } from "@/components/ResponsiveGrid";
 import { EmptyState } from "@/components/EmptyState";
 import { Loading } from "@/components/Loading";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useSession } from "@/contexts/SessionContext";
 import { format, startOfMonth, endOfMonth, subMonths } from "date-fns";
@@ -50,6 +50,7 @@ const addTransactionSchema = z.object({
 
 const DashboardPage: React.FC = () => {
   const { user } = useSession();
+  const queryClient = useQueryClient();
   const [isAddTransactionModalOpen, setIsAddTransactionModalOpen] = useState(false);
   const [selectedTransactionType, setSelectedTransactionType] = useState<'income' | 'expense'>('expense');
   const [dateRange, setDateRange] = useState<DateRange | undefined>({
@@ -121,6 +122,31 @@ const DashboardPage: React.FC = () => {
     enabled: !!user, // Only run query if user is available
   });
 
+  useEffect(() => {
+    if (!user) return;
+
+    const channel = supabase
+      .channel('dashboard_transactions_changes')
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'transactions',
+          filter: `user_id=eq.${user.id}`,
+        },
+        (payload) => {
+          console.log('Realtime transaction change received:', payload);
+          queryClient.invalidateQueries({ queryKey: ['dashboardData', user.id, dateRange] });
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [user, queryClient, dateRange]);
+
   const onSubmitAddTransaction = async (values: z.infer<typeof addTransactionSchema>) => {
     if (!user) {
       toast.error("You must be logged in to add a transaction.");
@@ -147,7 +173,7 @@ const DashboardPage: React.FC = () => {
         description: "",
         date: new Date(),
       });
-      refetch(); // Refresh dashboard data
+      // Real-time subscription will handle refetching
     }
   };
 

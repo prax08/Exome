@@ -1,7 +1,7 @@
 "use client";
 
 import * as React from "react";
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import {
   IndianRupee,
   PlusCircle,
@@ -19,7 +19,7 @@ import { Button } from "@/components/Button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/Card";
 import { EmptyState } from "@/components/EmptyState";
 import { Loading } from "@/components/Loading";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useSession } from "@/contexts/SessionContext";
 import { format } from "date-fns";
@@ -89,6 +89,7 @@ const paymentMethodFilterOptions = [
 
 const TransactionsPage: React.FC = () => {
   const { user } = useSession();
+  const queryClient = useQueryClient();
   const isMobile = useIsMobile();
 
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -211,6 +212,57 @@ const TransactionsPage: React.FC = () => {
     placeholderData: (previousData) => previousData,
   });
 
+  useEffect(() => {
+    if (!user) return;
+
+    const channel = supabase
+      .channel('transactions_page_changes')
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'transactions',
+          filter: `user_id=eq.${user.id}`,
+        },
+        (payload) => {
+          console.log('Realtime transaction change received:', payload);
+          queryClient.invalidateQueries({
+            queryKey: [
+              'transactions',
+              user.id,
+              transactionTypeFilter,
+              dateRange,
+              searchTerm,
+              categoryFilter,
+              paymentMethodFilter,
+              currentPage,
+              itemsPerPage,
+              sortColumn,
+              sortDirection,
+            ],
+          });
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [
+    user,
+    queryClient,
+    transactionTypeFilter,
+    dateRange,
+    searchTerm,
+    categoryFilter,
+    paymentMethodFilter,
+    currentPage,
+    itemsPerPage,
+    sortColumn,
+    sortDirection,
+  ]);
+
   const transactions = data?.data || [];
 
   const totalPages = useMemo(() => {
@@ -247,7 +299,7 @@ const TransactionsPage: React.FC = () => {
         toast.error(`Failed to delete transaction: ${error.message}`);
       } else {
         toast.success("Transaction deleted successfully!");
-        refetch();
+        // Real-time subscription will handle refetching
       }
     }
   };
@@ -301,7 +353,7 @@ const TransactionsPage: React.FC = () => {
       } else {
         toast.success(`${selectedTransactionIds.length} transactions deleted successfully!`);
         setSelectedTransactionIds([]);
-        refetch();
+        // Real-time subscription will handle refetching
       }
       setIsBulkDeleting(false);
     }
