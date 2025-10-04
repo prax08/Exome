@@ -78,7 +78,6 @@ const CategoryFormModal: React.FC<CategoryFormModalProps> = ({
         });
       } else {
         form.reset({
-          amount: 0, // This line was incorrect, should not be here for category form
           name: "",
           type: "expense",
           color: "#60A5FA",
