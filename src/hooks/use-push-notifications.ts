@@ -5,9 +5,8 @@ import { supabase } from '@/integrations/supabase/client';
 import { useSession } from '@/contexts/SessionContext';
 import { toast } from 'sonner';
 
-// Replace with your Supabase project ID and the VAPID Public Key you set as a secret
-const SUPABASE_PROJECT_ID = 'xxgqbdyhxgaqilhpbmsq'; // Your Supabase Project ID
-const VAPID_PUBLIC_KEY = import.meta.env.VITE_VAPID_PUBLIC_KEY; // Will be loaded from .env or Vercel env
+// VAPID Public Key will be loaded from .env or Vercel env
+const VAPID_PUBLIC_KEY = import.meta.env.VITE_VAPID_PUBLIC_KEY;
 
 const urlBase64ToUint8Array = (base64String: string) => {
   const padding = '='.repeat((4 - (base64String.length % 4)) % 4);

@@ -4,7 +4,7 @@ import React from "react";
 import { Navigate, Outlet } from "react-router-dom";
 import { useSession } from "@/contexts/SessionContext";
 import { Loading } from "@/components/Loading";
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/Card";
+import { Card, CardTitle, CardDescription } from "@/components/Card"; // Removed unused CardHeader and CardContent
 
 interface ProtectedRouteProps {
   requiredRoles?: string[];

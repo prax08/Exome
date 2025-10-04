@@ -8,7 +8,7 @@ import {
   DialogTrigger,
   DialogFooter,
 } from "@/components/ui/dialog";
-import { Button } from "@/components/Button"; // Using our custom Button
+// Removed import { Button } from "@/components/Button"; // Using our custom Button
 
 interface ModalProps {
   trigger?: React.ReactNode;

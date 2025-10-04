@@ -1,6 +1,6 @@
 import * as React from "react";
 import { Link } from "react-router-dom";
-import { Bell, Menu, User as UserIcon, Repeat, Tag, TrendingUp } from "lucide-react"; // Import TrendingUp icon for Budgets
+import { Bell, Menu, User as UserIcon } from "lucide-react"; // Removed unused imports
 import { Button } from "@/components/Button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
@@ -22,7 +22,7 @@ const Header: React.FC<HeaderProps> = ({
   className,
   ...props
 }) => {
-  const { user, session } = useSession();
+  const { user } = useSession(); // Removed unused 'session'
 
   const handleLogout = async () => {
     const { error } = await supabase.auth.signOut();

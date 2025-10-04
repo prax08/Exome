@@ -3,7 +3,6 @@
 import * as React from "react";
 import { useState, useMemo, useEffect } from "react";
 import {
-  IndianRupee,
   PlusCircle,
   ArrowUpCircle,
   ArrowDownCircle,
@@ -14,7 +13,7 @@ import {
   Tag,
   Paperclip,
   CreditCard,
-} from "lucide-react";
+} from "lucide-react"; // Removed IndianRupee
 import { Button } from "@/components/Button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/Card";
 import { EmptyState } from "@/components/EmptyState";
@@ -108,7 +107,7 @@ const TransactionsPage: React.FC = () => {
 
   // Pagination states
   const [currentPage, setCurrentPage] = useState(1);
-  const [itemsPerPage, setItemsPerPage] = useState(10);
+  const [itemsPerPage] = useState(10); // Removed setItemsPerPage as it's not used
 
   // Sorting states
   const [sortColumn, setSortColumn] = useState<SortColumn>('date');

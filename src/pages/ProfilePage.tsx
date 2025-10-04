@@ -7,13 +7,11 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/com
 import { Input } from "@/components/Input";
 import { Button } from "@/components/Button";
 import { Loading } from "@/components/Loading";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
-import { Form, FormField, FormItem, FormLabel, FormControl, FormDescription, FormMessage } from "@/components/Form";
+import { Form, FormField, FormItem, FormLabel, FormControl, FormMessage } from "@/components/Form"; // Removed FormDescription
 import { toast } from "sonner";
-import { User as UserIcon } from "lucide-react";
 import { Modal } from "@/components/Modal";
 import { AvatarUpload } from "@/components/AvatarUpload"; // Import AvatarUpload
 

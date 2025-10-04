@@ -1,17 +1,16 @@
 "use client";
 
-import React, { useState, useMemo } from "react";
+import React, { useState } from "react";
 import {
   PlusCircle,
   ArrowUpCircle,
   ArrowDownCircle,
   MoreHorizontal,
   Repeat,
-  CalendarDays,
   Tag,
 } from "lucide-react";
 import { Button } from "@/components/Button";
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/Card";
+import { Card, CardContent } from "@/components/Card"; // Removed unused CardHeader, CardTitle, CardDescription
 import { EmptyState } from "@/components/EmptyState";
 import { Loading } from "@/components/Loading";
 import { useQuery } from "@tanstack/react-query";

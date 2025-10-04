@@ -1,9 +1,9 @@
 "use client";
 
-import React, { useState, useMemo } from "react";
+import React, { useState } from "react";
 import { PlusCircle, Wallet, MoreHorizontal, Tag, TrendingUp } from "lucide-react";
 import { Button } from "@/components/Button";
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/Card";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/Card"; // Removed unused CardDescription
 import { EmptyState } from "@/components/EmptyState";
 import { Loading } from "@/components/Loading";
 import { useQuery } from "@tanstack/react-query";
@@ -19,9 +19,9 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { ProgressBar } from "@/components/ProgressBar"; // Import the new ProgressBar
+import { ProgressBar } from "@/components/ProgressBar";
 import { cn } from "@/lib/utils";
-import { useIsMobile } from "@/hooks/use-mobile";
+// Removed import { useIsMobile } from "@/hooks/use-mobile"; // Removed unused import
 import { toast } from "sonner";
 
 // Define budget type for client-side
@@ -40,7 +40,7 @@ interface Budget {
 
 const BudgetsPage: React.FC = () => {
   const { user } = useSession();
-  const isMobile = useIsMobile();
+  // const isMobile = useIsMobile(); // Removed unused variable
 
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingBudget, setEditingBudget] = useState<Budget | null>(null);
