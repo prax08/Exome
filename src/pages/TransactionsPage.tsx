@@ -50,6 +50,8 @@ import { useIsMobile } from "@/hooks/use-mobile";
 import { toast } from "sonner";
 import { CategorySelect } from "@/components/CategorySelect";
 import { Checkbox } from "@/components/ui/checkbox";
+import { useOnlineStatus } from "@/hooks/use-online-status"; // Import useOnlineStatus
+import { offlineStore } from "@/integrations/localforage"; // Import offlineStore
 
 // Define transaction type for client-side
 interface Transaction {
@@ -91,6 +93,7 @@ const TransactionsPage: React.FC = () => {
   const { user } = useSession();
   const queryClient = useQueryClient();
   const isMobile = useIsMobile();
+  const isOnline = useOnlineStatus(); // Get online status
 
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingTransaction, setEditingTransaction] = useState<Transaction | null>(null);
@@ -288,6 +291,27 @@ const TransactionsPage: React.FC = () => {
     }
 
     if (window.confirm("Are you sure you want to delete this transaction? This action cannot be undone.")) {
+      if (!isOnline) {
+        try {
+          const offlineDeleteKey = `offline-delete-${transactionId}`;
+          await offlineStore.setItem(offlineDeleteKey, { id: transactionId, user_id: user.id, local_status: 'pending-delete' });
+          toast.success("Transaction deletion saved offline. It will sync when you are back online!");
+          // Optimistically update UI
+          queryClient.setQueryData(
+            ['transactions', user.id, transactionTypeFilter, dateRange, searchTerm, categoryFilter, paymentMethodFilter, currentPage, itemsPerPage, sortColumn, sortDirection],
+            (oldData: any) => ({
+              ...oldData,
+              data: oldData.data.filter((t: Transaction) => t.id !== transactionId),
+              count: oldData.count - 1,
+            })
+          );
+        } catch (localforageError) {
+          console.error("Error saving transaction deletion offline:", localforageError);
+          toast.error("Failed to save transaction deletion offline.");
+        }
+        return;
+      }
+
       const { error } = await supabase
         .from('transactions')
         .delete()
@@ -341,6 +365,35 @@ const TransactionsPage: React.FC = () => {
 
     if (window.confirm(`Are you sure you want to delete ${selectedTransactionIds.length} selected transactions? This action cannot be undone.`)) {
       setIsBulkDeleting(true);
+
+      if (!isOnline) {
+        try {
+          const pendingDeletes = selectedTransactionIds.map(id => ({
+            id,
+            user_id: user.id,
+            local_status: 'pending-delete',
+          }));
+          await Promise.all(pendingDeletes.map(item => offlineStore.setItem(`offline-delete-${item.id}`, item)));
+          toast.success(`${selectedTransactionIds.length} transaction deletions saved offline. They will sync when you are back online!`);
+          // Optimistically update UI
+          queryClient.setQueryData(
+            ['transactions', user.id, transactionTypeFilter, dateRange, searchTerm, categoryFilter, paymentMethodFilter, currentPage, itemsPerPage, sortColumn, sortDirection],
+            (oldData: any) => ({
+              ...oldData,
+              data: oldData.data.filter((t: Transaction) => !selectedTransactionIds.includes(t.id)),
+              count: oldData.count - selectedTransactionIds.length,
+            })
+          );
+          setSelectedTransactionIds([]);
+        } catch (localforageError) {
+          console.error("Error saving bulk transaction deletions offline:", localforageError);
+          toast.error("Failed to save bulk transaction deletions offline.");
+        } finally {
+          setIsBulkDeleting(false);
+        }
+        return;
+      }
+
       const { error } = await supabase
         .from('transactions')
         .delete()

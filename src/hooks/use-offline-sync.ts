@@ -9,18 +9,18 @@ import { supabase } from '@/integrations/supabase/client';
 import { useSession } from '@/contexts/SessionContext';
 
 interface OfflineTransaction {
-  id?: string; // For updates, this will be the Supabase ID
+  id?: string; // For updates and deletes, this will be the Supabase ID
   local_id?: string; // For new inserts, a temporary local ID
   local_status: 'pending-insert' | 'pending-update' | 'pending-delete'; // Status of the offline operation
   user_id: string;
-  amount: number;
-  type: 'income' | 'expense';
-  description: string;
-  date: string;
-  category_id?: string | null;
-  receipt_url?: string | null;
-  vendor?: string | null;
-  payment_method?: string | null;
+  amount?: number; // Optional for delete operations
+  type?: 'income' | 'expense'; // Optional for delete operations
+  description?: string; // Optional for delete operations
+  date?: string; // Optional for delete operations
+  category_id?: string | null; // Optional for delete operations
+  receipt_url?: string | null; // Optional for delete operations
+  vendor?: string | null; // Optional for delete operations
+  payment_method?: string | null; // Optional for delete operations
 }
 
 const useOfflineSync = () => {
@@ -90,8 +90,28 @@ const useOfflineSync = () => {
                   await offlineStore.removeItem(key);
                   syncedCount++;
                 }
+              } else if (change.local_status === 'pending-delete') {
+                if (!change.id) {
+                  console.error(`Offline delete ${key} missing transaction ID.`);
+                  await offlineStore.removeItem(key); // Remove malformed delete
+                  failedCount++;
+                  continue;
+                }
+                const { error } = await supabase
+                  .from('transactions')
+                  .delete()
+                  .eq('id', change.id)
+                  .eq('user_id', user.id); // Ensure user ownership
+
+                if (error) {
+                  console.error(`Error syncing offline delete ${key}:`, error);
+                  toast.error(`Failed to sync transaction deletion: ${error.message}`);
+                  failedCount++;
+                } else {
+                  await offlineStore.removeItem(key);
+                  syncedCount++;
+                }
               }
-              // Add 'pending-delete' handling here if implemented
             } catch (opError) {
               console.error(`Unexpected error during sync operation for ${key}:`, opError);
               toast.error(`An unexpected error occurred syncing an item: ${opError instanceof Error ? opError.message : String(opError)}`);
