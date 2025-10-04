@@ -34,7 +34,7 @@ const BottomNavigation: React.FC = () => {
               key={item.label}
               to={item.path}
               className={cn(
-                "flex flex-col items-center justify-center gap-1 text-xs font-medium transition-colors",
+                "flex flex-col items-center justify-center flex-1 gap-1 text-xs font-medium transition-colors px-1 py-1", // Added flex-1 and padding
                 isActive ? "text-primary" : "text-muted-foreground hover:text-primary",
               )}
             >
