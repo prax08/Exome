@@ -21,7 +21,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { ProgressBar } from "@/components/ProgressBar";
 import { cn } from "@/lib/utils";
-// import { useIsMobile } from "@/hooks/use-mobile"; // Removed unused variable
+// The 'useIsMobile' import is removed as it's not used in this component.
 import { toast } from "sonner";
 
 // Define budget type for client-side
@@ -40,7 +40,7 @@ interface Budget {
 
 const BudgetsPage: React.FC = () => {
   const { user } = useSession();
-  // const isMobile = useIsMobile(); // Removed unused variable
+  // The 'isMobile' variable declaration is removed as it's not used.
 
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingBudget, setEditingBudget] = useState<Budget | null>(null);

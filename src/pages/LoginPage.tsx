@@ -29,7 +29,7 @@ const LoginPage: React.FC = () => {
                 },
               },
             }}
-            theme="light" // Or "dark" based on your app's theme
+            theme="dark" // Changed to "dark" theme
             redirectTo={window.location.origin} // Redirects to the app's root after auth
           />
         </CardContent>
