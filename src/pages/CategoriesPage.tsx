@@ -29,6 +29,7 @@ import {
 import { useIsMobile } from "@/hooks/use-mobile";
 import { toast } from "sonner";
 import * as LucideIcons from "lucide-react"; // Import all Lucide icons
+import { MobileActionSheet } from "@/components/MobileActionSheet"; // Import MobileActionSheet
 
 // Define category type for client-side
 interface Category {
@@ -149,22 +150,10 @@ const CategoriesPage: React.FC = () => {
                             <p className="text-sm text-muted-foreground capitalize">{category.type}</p>
                           </div>
                         </div>
-                        <DropdownMenu>
-                          <DropdownMenuTrigger asChild>
-                            <Button variant="ghost" className="h-8 w-8 p-0">
-                              <span className="sr-only">Open menu</span>
-                              <MoreHorizontal className="h-4 w-4" />
-                            </Button>
-                          </DropdownMenuTrigger>
-                          <DropdownMenuContent align="end">
-                            <DropdownMenuLabel>Actions</DropdownMenuLabel>
-                            <DropdownMenuItem onClick={() => handleEditCategory(category)}>Edit</DropdownMenuItem>
-                            <DropdownMenuSeparator />
-                            <DropdownMenuItem onClick={() => handleDeleteCategory(category.id)} className="text-destructive">
-                              Delete
-                            </DropdownMenuItem>
-                          </DropdownMenuContent>
-                        </DropdownMenu>
+                        <MobileActionSheet title="Category Actions" description={`Actions for ${category.name}`}>
+                          <Button variant="ghost" onClick={() => handleEditCategory(category)}>Edit</Button>
+                          <Button variant="destructive" onClick={() => handleDeleteCategory(category.id)}>Delete</Button>
+                        </MobileActionSheet>
                       </div>
                     </CardContent>
                   </Card>

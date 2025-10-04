@@ -21,8 +21,9 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { ProgressBar } from "@/components/ProgressBar";
 import { cn } from "@/lib/utils";
-// The 'useIsMobile' import is removed as it's not used in this component.
+import { useIsMobile } from "@/hooks/use-mobile"; // Import useIsMobile
 import { toast } from "sonner";
+import { MobileActionSheet } from "@/components/MobileActionSheet"; // Import MobileActionSheet
 
 // Define budget type for client-side
 interface Budget {
@@ -40,7 +41,7 @@ interface Budget {
 
 const BudgetsPage: React.FC = () => {
   const { user } = useSession();
-  // The 'isMobile' variable declaration is removed as it's not used.
+  const isMobile = useIsMobile(); // Use the hook
 
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingBudget, setEditingBudget] = useState<Budget | null>(null);
@@ -187,22 +188,29 @@ const BudgetsPage: React.FC = () => {
                     <Wallet className="h-5 w-5 text-muted-foreground" />
                     <CardTitle className="text-lg font-medium">{budget.name}</CardTitle>
                   </div>
-                  <DropdownMenu>
-                    <DropdownMenuTrigger asChild>
-                      <Button variant="ghost" className="h-8 w-8 p-0">
-                        <span className="sr-only">Open menu</span>
-                        <MoreHorizontal className="h-4 w-4" />
-                      </Button>
-                    </DropdownMenuTrigger>
-                    <DropdownMenuContent align="end">
-                      <DropdownMenuLabel>Actions</DropdownMenuLabel>
-                      <DropdownMenuItem onClick={() => handleEditBudget(budget)}>Edit</DropdownMenuItem>
-                      <DropdownMenuSeparator />
-                      <DropdownMenuItem onClick={() => handleDeleteBudget(budget.id)} className="text-destructive">
-                        Delete
-                      </DropdownMenuItem>
-                    </DropdownMenuContent>
-                  </DropdownMenu>
+                  {isMobile ? (
+                    <MobileActionSheet title="Budget Actions" description={`Actions for ${budget.name}`}>
+                      <Button variant="ghost" onClick={() => handleEditBudget(budget)}>Edit</Button>
+                      <Button variant="destructive" onClick={() => handleDeleteBudget(budget.id)}>Delete</Button>
+                    </MobileActionSheet>
+                  ) : (
+                    <DropdownMenu>
+                      <DropdownMenuTrigger asChild>
+                        <Button variant="ghost" className="h-8 w-8 p-0">
+                          <span className="sr-only">Open menu</span>
+                          <MoreHorizontal className="h-4 w-4" />
+                        </Button>
+                      </DropdownMenuTrigger>
+                      <DropdownMenuContent align="end">
+                        <DropdownMenuLabel>Actions</DropdownMenuLabel>
+                        <DropdownMenuItem onClick={() => handleEditBudget(budget)}>Edit</DropdownMenuItem>
+                        <DropdownMenuSeparator />
+                        <DropdownMenuItem onClick={() => handleDeleteBudget(budget.id)} className="text-destructive">
+                          Delete
+                        </DropdownMenuItem>
+                      </DropdownMenuContent>
+                    </DropdownMenu>
+                  )}
                 </CardHeader>
                 <CardContent className="space-y-4">
                   {budget.category_name && (

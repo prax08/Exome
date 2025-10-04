@@ -36,6 +36,7 @@ import {
 } from "@/components/ui/table";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { toast } from "sonner";
+import { MobileActionSheet } from "@/components/MobileActionSheet"; // Import MobileActionSheet
 
 // Define recurring transaction type for client-side
 interface RecurringTransaction {
@@ -203,22 +204,10 @@ const RecurringTransactionsPage: React.FC = () => {
                         <p className={`font-semibold ${rt.type === 'income' ? 'text-green-600' : 'text-red-600'}`}>
                           ₹{rt.amount.toFixed(2)}
                         </p>
-                        <DropdownMenu>
-                          <DropdownMenuTrigger asChild>
-                            <Button variant="ghost" className="h-8 w-8 p-0">
-                              <span className="sr-only">Open menu</span>
-                              <MoreHorizontal className="h-4 w-4" />
-                            </Button>
-                          </DropdownMenuTrigger>
-                          <DropdownMenuContent align="end">
-                            <DropdownMenuLabel>Actions</DropdownMenuLabel>
-                            <DropdownMenuItem onClick={() => handleEditRecurringTransaction(rt)}>Edit</DropdownMenuItem>
-                            <DropdownMenuSeparator />
-                            <DropdownMenuItem onClick={() => handleDeleteRecurringTransaction(rt.id)} className="text-destructive">
-                              Delete
-                            </DropdownMenuItem>
-                          </DropdownMenuContent>
-                        </DropdownMenu>
+                        <MobileActionSheet title="Recurring Transaction Actions" description={`Actions for ${rt.description}`}>
+                          <Button variant="ghost" onClick={() => handleEditRecurringTransaction(rt)}>Edit</Button>
+                          <Button variant="destructive" onClick={() => handleDeleteRecurringTransaction(rt.id)}>Delete</Button>
+                        </MobileActionSheet>
                       </div>
                     </div>
                   </CardContent>

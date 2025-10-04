@@ -19,6 +19,8 @@ import { Input } from "@/components/Input";
 import { Select } from "@/components/Select";
 import { toast } from "sonner";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
+import { useIsMobile } from "@/hooks/use-mobile"; // Import useIsMobile
+import { MobileActionSheet } from "@/components/MobileActionSheet"; // Import MobileActionSheet
 
 // Define account type for client-side
 interface Account {
@@ -65,6 +67,7 @@ const getAccountIcon = (type: Account['type']) => {
 
 const AccountsPage: React.FC = () => {
   const { user } = useSession();
+  const isMobile = useIsMobile(); // Use the hook
   const [isAccountModalOpen, setIsAccountModalOpen] = React.useState(false);
   const [editingAccount, setEditingAccount] = React.useState<Account | null>(null);
 
@@ -223,22 +226,29 @@ const AccountsPage: React.FC = () => {
                   {getAccountIcon(account.type)}
                   <CardTitle className="text-lg font-medium">{account.name}</CardTitle>
                 </div>
-                <DropdownMenu>
-                  <DropdownMenuTrigger asChild>
-                    <Button variant="ghost" className="h-8 w-8 p-0">
-                      <span className="sr-only">Open menu</span>
-                      <MoreHorizontal className="h-4 w-4" />
-                    </Button>
-                  </DropdownMenuTrigger>
-                  <DropdownMenuContent align="end">
-                    <DropdownMenuLabel>Actions</DropdownMenuLabel>
-                    <DropdownMenuItem onClick={() => openEditAccountModal(account)}>Edit</DropdownMenuItem>
-                    <DropdownMenuSeparator />
-                    <DropdownMenuItem onClick={() => handleDeleteAccount(account.id)} className="text-destructive">
-                      Delete
-                    </DropdownMenuItem>
-                  </DropdownMenuContent>
-                </DropdownMenu>
+                {isMobile ? (
+                  <MobileActionSheet title="Account Actions" description={`Actions for ${account.name}`}>
+                    <Button variant="ghost" onClick={() => openEditAccountModal(account)}>Edit</Button>
+                    <Button variant="destructive" onClick={() => handleDeleteAccount(account.id)}>Delete</Button>
+                  </MobileActionSheet>
+                ) : (
+                  <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                      <Button variant="ghost" className="h-8 w-8 p-0">
+                        <span className="sr-only">Open menu</span>
+                        <MoreHorizontal className="h-4 w-4" />
+                      </Button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent align="end">
+                      <DropdownMenuLabel>Actions</DropdownMenuLabel>
+                      <DropdownMenuItem onClick={() => openEditAccountModal(account)}>Edit</DropdownMenuItem>
+                      <DropdownMenuSeparator />
+                      <DropdownMenuItem onClick={() => handleDeleteAccount(account.id)} className="text-destructive">
+                        Delete
+                      </DropdownMenuItem>
+                    </DropdownMenuContent>
+                  </DropdownMenu>
+                )}
               </CardHeader>
               <CardContent>
                 <div className="text-2xl font-bold">₹{account.balance.toFixed(2)}</div>

@@ -51,6 +51,7 @@ import { CategorySelect } from "@/components/CategorySelect";
 import { Checkbox } from "@/components/ui/checkbox";
 import { useOnlineStatus } from "@/hooks/use-online-status"; // Import useOnlineStatus
 import { offlineStore } from "@/integrations/localforage"; // Import offlineStore
+import { MobileActionSheet } from "@/components/MobileActionSheet"; // Import MobileActionSheet
 
 // Define transaction type for client-side
 interface Transaction {
@@ -291,6 +292,7 @@ const TransactionsPage: React.FC = () => {
 
     if (window.confirm("Are you sure you want to delete this transaction? This action cannot be undone.")) {
       if (!isOnline) {
+        // Save to localforage for offline delete
         try {
           const offlineDeleteKey = `offline-delete-${transactionId}`;
           await offlineStore.setItem(offlineDeleteKey, { id: transactionId, user_id: user.id, local_status: 'pending-delete' });
@@ -366,6 +368,7 @@ const TransactionsPage: React.FC = () => {
       setIsBulkDeleting(true);
 
       if (!isOnline) {
+        // Save to localforage for offline bulk delete
         try {
           const pendingDeletes = selectedTransactionIds.map(id => ({
             id,
@@ -621,22 +624,10 @@ const TransactionsPage: React.FC = () => {
                         <p className={`font-semibold ${transaction.type === 'income' ? 'text-green-600' : 'text-red-600'}`}>
                           ₹{transaction.amount.toFixed(2)}
                         </p>
-                        <DropdownMenu>
-                          <DropdownMenuTrigger asChild>
-                            <Button variant="ghost" className="h-8 w-8 p-0">
-                              <span className="sr-only">Open menu</span>
-                              <MoreHorizontal className="h-4 w-4" />
-                            </Button>
-                          </DropdownMenuTrigger>
-                          <DropdownMenuContent align="end">
-                            <DropdownMenuLabel>Actions</DropdownMenuLabel>
-                            <DropdownMenuItem onClick={() => handleEditTransaction(transaction)}>Edit</DropdownMenuItem>
-                            <DropdownMenuSeparator />
-                            <DropdownMenuItem onClick={() => handleDeleteTransaction(transaction.id)} className="text-destructive">
-                              Delete
-                            </DropdownMenuItem>
-                          </DropdownMenuContent>
-                        </DropdownMenu>
+                        <MobileActionSheet title="Transaction Actions" description={`Actions for ${transaction.description}`}>
+                          <Button variant="ghost" onClick={() => handleEditTransaction(transaction)}>Edit</Button>
+                          <Button variant="destructive" onClick={() => handleDeleteTransaction(transaction.id)}>Delete</Button>
+                        </MobileActionSheet>
                       </div>
                     </div>
                   </CardContent>
